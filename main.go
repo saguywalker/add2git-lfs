@@ -79,6 +79,7 @@ func gitAddFile(filename string) error {
 	gitAddCmd := exec.Command("bash", "-c", "git add sample-files")
 	_, err := gitAddCmd.Output()
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	return nil
@@ -88,6 +89,7 @@ func gitCommitShell() error {
 	gitCommitCmd := exec.Command("bash", "-c", "git commit -m \"upload sample files \"")
 	out, err := gitCommitCmd.Output()
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	fmt.Println(string(out))
@@ -96,9 +98,10 @@ func gitCommitShell() error {
 }
 
 func gitPushShell() error {
-	gitPushCmd := exec.Command("bash", "-c", "git push")
+	gitPushCmd := exec.Command("bash", "-c", "git push origin master")
 	out, err := gitPushCmd.Output()
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	fmt.Println(string(out))
