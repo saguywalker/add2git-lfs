@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,12 +23,25 @@ func main() {
 }
 
 func handleUpload(c echo.Context) error {
-	info, err := c.FormFile("file")
+	fileInfo, err := c.FormFile("file")
 	if err != nil {
-		return c.String(http.StatusBadRequest, "Error when uploading files")
+		return c.String(http.StatusBadRequest, "Error when parsing files")
 	}
-	fullname := uploadsDir + info.Filename
+	fullname := uploadsDir + fileInfo.Filename
+
+	file, err := fileInfo.Open()
+	if err != nil {
+		message := fmt.Sprintf("Error when opening %v", fullname)
+		return c.String(http.StatusBadRequest, message)
+	}
+
 	out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		message := fmt.Sprintf("Error when uploading file %v", fullname)
+		return c.String(http.StatusExpectationFailed, message)
+	}
+
+	io.Copy(out, file)
 
 	err = gitAddFile(fullname)
 	if err != nil {
@@ -73,7 +87,7 @@ func gitCommitShell() error {
 }
 
 func gitPushShell() error {
-	gitPushCmd := exec.Command("bash", "-c", "git push origin master")
+	gitPushCmd := exec.Command("bash", "-c", "git push")
 	out, err := gitPushCmd.Output()
 	if err != nil {
 		return err
