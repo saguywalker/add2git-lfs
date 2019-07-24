@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 const uploadsDir = "sample-files/"
@@ -15,11 +16,19 @@ const uploadsDir = "sample-files/"
 func main() {
 	fmt.Println("add2git-web")
 	e := echo.New()
+	e.Use(middleware.Logger())
 	e.Static("/public", "public")
 	e.File("/", "views/upload.html")
 	e.POST("/upload", handleUpload)
 
 	e.Logger.Fatal(e.Start(":12358"))
+	/*
+		err := gitPushShell()
+		if err != nil {
+			fmt.Println(err.Error())
+			panic(err)
+		}
+	*/
 }
 
 func handleUpload(c echo.Context) error {
