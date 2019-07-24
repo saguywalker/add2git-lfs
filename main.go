@@ -74,13 +74,14 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(commit)
-
+/*
 	err = repo.Push(&git.PushOptions{
 		RemoteName: "origin",
 	})
 	if err != nil {
 		panic(err)
 	}
+	*/
 }
 
 func handleUpload(ctx iris.Context) {
@@ -115,7 +116,7 @@ func handleUpload(ctx iris.Context) {
 }
 
 func gitAddFile(filename string) error {
-	gitAddCmd := exec.Command("bash", "-c", "git add "+filename)
+	gitAddCmd := exec.Command("bash", "-c", "git add "+filename+"*")
 	_, err := gitAddCmd.Output()
 	if err != nil {
 		return err
