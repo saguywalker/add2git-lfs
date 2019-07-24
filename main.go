@@ -19,17 +19,6 @@ const uploadsDir = "sample-files/"
 
 func main() {
 	app := iris.New()
-	path, _ := os.Getwd()
-
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		panic(err)
-	}
-
-	/*w, err := repo.Worktree()
-	if err != nil {
-		panic(err)
-	}*/
 
 	/*err = w.Pull(&git.PullOptions{RemoteName: "origin"})
 	if err != nil {
@@ -52,10 +41,21 @@ func main() {
 
 	// Upload the file to the server
 	// POST: http://localhost:12358/upload
-	app.Post("/upload", iris.LimitRequestBodySize(10<<20), handleUpload)
+	//app.Post("/upload", iris.LimitRequestBodySize(10<<20), handleUpload)
+	app.Post("/upload", handleUpload)
 
 	// Start the server at http://localhost:12358
 	app.Run(iris.Addr(":12358"))
+
+	/*err := gitCommitShell()
+	if err != nil{
+		panic(err)
+	}*/
+
+	err := gitPushShell()
+	if err != nil{
+		panic(err)
+	}
 
 }
 
@@ -69,13 +69,13 @@ func handleUpload(ctx iris.Context) {
 
 	defer file.Close()
 	fname := info.Filename
-
+	fullname := uploadsDir + fname
 	// Create a file with the same name
 	// assuming that you have a folder named 'uploads'
-	out, err := os.OpenFile(uploadsDir+fname,
+	out, err := os.OpenFile(fullname,
 		os.O_WRONLY|os.O_CREATE, 0666)
 
-	err = gitAddFile(uploadsDir)
+	err = gitAddFile(fullname)
 	if err != nil {
 		panic(err)
 	}
@@ -85,12 +85,12 @@ func handleUpload(ctx iris.Context) {
 		panic(err)
 	}
 
-	err = repo.Push(&git.PushOptions{
+	/*err = repo.Push(&git.PushOptions{
 		RemoteName: "origin",
 	})
 	if err != nil {
 		panic(err)
-	}
+	}*/
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.Application().Logger().Warnf("Error while preparing the new file: %v", err.Error())
@@ -102,12 +102,13 @@ func handleUpload(ctx iris.Context) {
 }
 
 func gitAddFile(filename string) error {
-	gitAddCmd := exec.Command("bash", "-c", "git add "+filename+"*")
+	addCmd := fmt.Sprintf("git add %v", filename)
+	fmt.Println(addCmd)
+	gitAddCmd := exec.Command("bash", "-c", "git add sample-files")
 	_, err := gitAddCmd.Output()
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -123,11 +124,22 @@ func gitCommit(w *git.Worktree, commitMsg, name, email string) (plumbing.Hash, e
 }
 
 func gitCommitShell() error {
-	gitCommitShell := exec.Command("bash", "-c", "git commit -m \"upload sample files \"")
-	_, err := gitCommitShell.Output()
+	gitCommitCmd := exec.Command("bash", "-c", "git commit -m \"upload sample files \"")
+	out, err := gitCommitCmd.Output()
 	if err != nil {
 		return err
 	}
+	fmt.Println(string(out))
 
+	return nil
+}
+
+func gitPushShell() error{
+	gitPushCmd := exec.Command("bash", "-c", "git push origin master")
+	out, err := gitPushCmd.Output()
+	if err != nil{
+		return err
+	}
+	fmt.Println(string(out))
 	return nil
 }
