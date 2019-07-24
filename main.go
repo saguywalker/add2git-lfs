@@ -13,6 +13,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+var repo *git.Repository
+
 const uploadsDir = "sample-files/"
 
 func main() {
@@ -24,14 +26,16 @@ func main() {
 		panic(err)
 	}
 
-	w, err := repo.Worktree()
+	/*w, err := repo.Worktree()
 	if err != nil {
 		panic(err)
-	}
+	}*/
 
 	/*err = w.Pull(&git.PullOptions{RemoteName: "origin"})
 	if err != nil {
-		panic(err)
+		if err.Error() != "already up-to-date" {
+			panic(err)
+		}
 	}*/
 
 	// Register templates
@@ -53,35 +57,6 @@ func main() {
 	// Start the server at http://localhost:12358
 	app.Run(iris.Addr(":12358"))
 
-	status, err := w.Status()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(status)
-
-	err = gitCommitShell()
-	if err != nil {
-		panic(err)
-	}
-
-	ref, err := repo.Head()
-	if err != nil {
-		panic(ref)
-	}
-
-	commit, err := repo.CommitObject(ref.Hash())
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(commit)
-/*
-	err = repo.Push(&git.PushOptions{
-		RemoteName: "origin",
-	})
-	if err != nil {
-		panic(err)
-	}
-	*/
 }
 
 func handleUpload(ctx iris.Context) {
@@ -105,6 +80,17 @@ func handleUpload(ctx iris.Context) {
 		panic(err)
 	}
 
+	err = gitCommitShell()
+	if err != nil {
+		panic(err)
+	}
+
+	err = repo.Push(&git.PushOptions{
+		RemoteName: "origin",
+	})
+	if err != nil {
+		panic(err)
+	}
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.Application().Logger().Warnf("Error while preparing the new file: %v", err.Error())
