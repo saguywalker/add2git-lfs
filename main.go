@@ -19,7 +19,12 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		err := gitCommitShell()
+		err := gitAddFile("sample-files")
+		if err != nil {
+			panic(err)
+		}
+
+		err = gitCommitShell()
 		if err != nil {
 			panic(err)
 		}
@@ -68,24 +73,24 @@ func handleUpload(c echo.Context) error {
 	}
 
 	io.Copy(out, file)
+	/*
+		err = gitAddFile(fullname)
+		if err != nil {
+			message := fmt.Sprintf("Error when running git add %s", fullname)
+			return c.String(http.StatusExpectationFailed, message)
+		}
 
-	err = gitAddFile(fullname)
-	if err != nil {
-		message := fmt.Sprintf("Error when running git add %s", fullname)
-		return c.String(http.StatusExpectationFailed, message)
-	}
+		err = gitCommitShell()
+		if err != nil {
+			message := fmt.Sprintf("Error when running git commit %s", fullname)
+			return c.String(http.StatusExpectationFailed, message)
+		}
 
-	/*err = gitCommitShell()
-	if err != nil {
-		message := fmt.Sprintf("Error when running git commit %s", fullname)
-		return c.String(http.StatusExpectationFailed, message)
-	}
-
-	err = gitPushShell()
-	if err != nil {
-		message := fmt.Sprintf("Error when running git push (%s)", fullname)
-		return c.String(http.StatusExpectationFailed, message)
-	}*/
+		err = gitPushShell()
+		if err != nil {
+			message := fmt.Sprintf("Error when running git push (%s)", fullname)
+			return c.String(http.StatusExpectationFailed, message)
+		}*/
 
 	return c.String(http.StatusOK, "Files uploaded")
 }
