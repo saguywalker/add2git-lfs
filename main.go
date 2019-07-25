@@ -6,17 +6,34 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
 const uploadsDir = "sample-files/"
 
 func main() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		err := gitCommitShell()
+		if err != nil {
+			panic(err)
+		}
+
+		err = gitPushShell()
+		if err != nil {
+			panic(err)
+		}
+		os.Exit(1)
+	}()
+
 	fmt.Println("add2git-web")
 	e := echo.New()
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Static("/public", "public")
 	e.File("/", "views/upload.html")
 	e.POST("/upload", handleUpload)
@@ -58,7 +75,7 @@ func handleUpload(c echo.Context) error {
 		return c.String(http.StatusExpectationFailed, message)
 	}
 
-	err = gitCommitShell()
+	/*err = gitCommitShell()
 	if err != nil {
 		message := fmt.Sprintf("Error when running git commit %s", fullname)
 		return c.String(http.StatusExpectationFailed, message)
@@ -68,7 +85,7 @@ func handleUpload(c echo.Context) error {
 	if err != nil {
 		message := fmt.Sprintf("Error when running git push (%s)", fullname)
 		return c.String(http.StatusExpectationFailed, message)
-	}
+	}*/
 
 	return c.String(http.StatusOK, "Files uploaded")
 }
@@ -76,10 +93,10 @@ func handleUpload(c echo.Context) error {
 func gitAddFile(filename string) error {
 	addCmd := fmt.Sprintf("git add %v", filename)
 	fmt.Println(addCmd)
-	gitAddCmd := exec.Command("bash", "-c", "git add sample-files")
+	gitAddCmd := exec.Command("bash", "-c", addCmd)
 	_, err := gitAddCmd.Output()
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -89,7 +106,7 @@ func gitCommitShell() error {
 	gitCommitCmd := exec.Command("bash", "-c", "git commit -m \"upload sample files \"")
 	out, err := gitCommitCmd.Output()
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return err
 	}
 	fmt.Println(string(out))
@@ -101,7 +118,7 @@ func gitPushShell() error {
 	gitPushCmd := exec.Command("bash", "-c", "git push origin master")
 	out, err := gitPushCmd.Output()
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return err
 	}
 	fmt.Println(string(out))
