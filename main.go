@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 
 	rice "github.com/GeertJohan/go.rice"
 
@@ -18,7 +16,7 @@ import (
 const uploadsDir = "sample-files/"
 
 func main() {
-	c := make(chan os.Signal)
+	/*c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -37,7 +35,7 @@ func main() {
 			panic(err)
 		}
 		os.Exit(1)
-	}()
+	}()*/
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := initLfs()
@@ -51,6 +49,7 @@ func main() {
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 	e.POST("/upload", handleUpload)
+	e.POST("/pushfiles", handlePushFiles)
 	e.Logger.Fatal(e.Start(":12358"))
 }
 
@@ -75,7 +74,7 @@ func handleUpload(c echo.Context) error {
 
 	io.Copy(out, file)
 
-	return c.String(http.StatusOK, "Files uploaded")
+	return c.String(http.StatusOK, "Files are uploaded")
 }
 
 func initLfs() error {
@@ -119,4 +118,24 @@ func gitPushShell() error {
 	}
 	fmt.Println(string(out))
 	return nil
+}
+
+func handlePushFiles(c echo.Context) error {
+	fmt.Println("In handlePushFiles")
+	err := gitAddFile("sample-files")
+	if err != nil {
+		return c.String(http.StatusExpectationFailed, err.Error())
+	}
+
+	err = gitCommitShell()
+	if err != nil {
+		return c.String(http.StatusExpectationFailed, err.Error())
+	}
+
+	err = gitPushShell()
+	if err != nil {
+		return c.String(http.StatusExpectationFailed, err.Error())
+	}
+
+	return c.String(http.StatusOK, "/")
 }

@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>DropzoneJS Uploader</title>
+    <title>add2git-lfs</title>
 
     <link href="/static/dropzone.css" type="text/css" rel="stylesheet" />
 
@@ -16,6 +16,9 @@
             <input type="submit" value="Upload" />
         </div>
     </form>
+    <form action="/pushfiles" method="POST" id="submit-form">
+    </form>
+    <button type="submit" form="submit-form" value="Submit">Push Files</button>
 </body>
 
 </html>
