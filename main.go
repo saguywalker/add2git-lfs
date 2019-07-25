@@ -89,11 +89,12 @@ func gitAddFile(filename string) error {
 
 func gitCommitShell() error {
 	var err error
-	gitCommitCmd := "git commit -m"
 	if runtime.GOOS == "windows" {
-		_, err = exec.Command("cmd", "/C", gitCommitCmd, "upload-sample-files").Output()
+		commitCmd := "git commit -m upload-sample-files"
+		_, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		_, err = exec.Command("bash", "-c", gitCommitCmd, "upload sample files").Output()
+		commitCmd := "git commit -m \"upload sample files\""
+		_, err = exec.Command("bash", "-c", commitCmd).Output()
 	}
 	if err != nil {
 		return err
