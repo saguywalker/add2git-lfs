@@ -121,21 +121,23 @@ func gitPushShell() error {
 }
 
 func handlePushFiles(c echo.Context) error {
-	fmt.Println("In handlePushFiles")
 	err := gitAddFile("sample-files")
 	if err != nil {
+		fmt.Println(err)
 		return c.String(http.StatusExpectationFailed, err.Error())
 	}
 
 	err = gitCommitShell()
 	if err != nil {
+		fmt.Println(err)
 		return c.String(http.StatusExpectationFailed, err.Error())
 	}
 
 	err = gitPushShell()
 	if err != nil {
+		fmt.Println(err)
 		return c.String(http.StatusExpectationFailed, err.Error())
 	}
 
-	return c.String(http.StatusOK, "/")
+	return c.Redirect(http.StatusMovedPermanently, "/")
 }
