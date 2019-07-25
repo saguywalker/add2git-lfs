@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	rice "github.com/GeertJohan/go.rice"
 
@@ -16,27 +17,6 @@ import (
 const uploadsDir = "sample-files/"
 
 func main() {
-	/*c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		err := gitAddFile("sample-files")
-		if err != nil {
-			panic(err)
-		}
-
-		err = gitCommitShell()
-		if err != nil {
-			panic(err)
-		}
-
-		err = gitPushShell()
-		if err != nil {
-			panic(err)
-		}
-		os.Exit(1)
-	}()*/
-
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := initLfs()
 	if err != nil {
@@ -78,45 +58,62 @@ func handleUpload(c echo.Context) error {
 }
 
 func initLfs() error {
-	initLfsCmd := exec.Command("bash", "-c", "git lfs install && git lfs track \"sample-files/*\" && git add .gitattributes")
-	out, err := initLfsCmd.Output()
+	var err error
+	initLfsCmd := "git lfs install && git lfs track \"sample-files/*\" && git add .gitattributes"
+	if runtime.GOOS == "windows" {
+		_, err = exec.Command("cmd", "/C", initLfsCmd).Output()
+	} else {
+		_, err = exec.Command("bash", "-c", initLfsCmd).Output()
+	}
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(out))
 
 	return nil
 }
 
 func gitAddFile(filename string) error {
+	var err error
 	addCmd := fmt.Sprintf("git add %v", filename)
-	gitAddCmd := exec.Command("bash", "-c", addCmd)
-	_, err := gitAddCmd.Output()
+	if runtime.GOOS == "windows" {
+		_, err = exec.Command("cmd", "/C", addCmd).Output()
+	} else {
+		_, err = exec.Command("bash", "-c", addCmd).Output()
+	}
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func gitCommitShell() error {
-	gitCommitCmd := exec.Command("bash", "-c", "git commit -m \"upload sample files \"")
-	out, err := gitCommitCmd.Output()
+	var err error
+	gitCommitCmd := "git commit -m"
+	if runtime.GOOS == "windows" {
+		_, err = exec.Command("cmd", "/C", gitCommitCmd, "upload-sample-files").Output()
+	} else {
+		_, err = exec.Command("bash", "-c", gitCommitCmd, "upload sample files").Output()
+	}
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(out))
-
+	fmt.Println("after git commit")
 	return nil
 }
 
 func gitPushShell() error {
-	gitPushCmd := exec.Command("bash", "-c", "git push origin master")
-	out, err := gitPushCmd.Output()
+	var err error
+	gitPushCmd := "git push origin master"
+	if runtime.GOOS == "windows" {
+		_, err = exec.Command("cmd", "/C", gitPushCmd).Output()
+	} else {
+		_, err = exec.Command("bash", "-c", gitPushCmd).Output()
+	}
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
-	fmt.Println(string(out))
+
 	return nil
 }
 
