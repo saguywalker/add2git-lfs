@@ -12,6 +12,7 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 const uploadsDir = "sample-files/"
@@ -24,7 +25,7 @@ func main() {
 	}
 
 	e := echo.New()
-
+	e.Use(middleware.Logger())
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
@@ -93,13 +94,12 @@ func gitCommitShell() error {
 		commitCmd := "git commit -m upload-sample-files"
 		_, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		commitCmd := "git commit -m \"upload sample files\""
+		commitCmd := "git commit -m upload-sample-files"
 		_, err = exec.Command("bash", "-c", commitCmd).Output()
 	}
 	if err != nil {
 		return err
 	}
-	fmt.Println("after git commit")
 	return nil
 }
 
@@ -121,20 +121,20 @@ func gitPushShell() error {
 func handlePushFiles(c echo.Context) error {
 	err := gitAddFile("sample-files")
 	if err != nil {
-		fmt.Println(err)
-		return c.String(http.StatusExpectationFailed, err.Error())
+		errMsg := fmt.Sprintf("Error when running \"git add sample-files\"\n%s", err.Error())
+		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	err = gitCommitShell()
 	if err != nil {
-		fmt.Println(err)
-		return c.String(http.StatusExpectationFailed, err.Error())
+		errMsg := fmt.Sprintf("Error when running \"git commit\"\n%s", err.Error())
+		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	err = gitPushShell()
 	if err != nil {
-		fmt.Println(err)
-		return c.String(http.StatusExpectationFailed, err.Error())
+		errMsg := fmt.Sprintf("Error when running \"git push\"\n%s", err.Error())
+		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, "/")
