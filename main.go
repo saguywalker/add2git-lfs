@@ -12,7 +12,6 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
 const uploadsDir = "sample-files/"
@@ -25,12 +24,12 @@ func main() {
 	}
 
 	e := echo.New()
-	e.Use(middleware.Logger())
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 	e.POST("/upload", handleUpload)
 	e.POST("/pushfiles", handlePushFiles)
+	go open("http://localhost:12358/")
 	e.Logger.Fatal(e.Start(":12358"))
 }
 
@@ -138,4 +137,21 @@ func handlePushFiles(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, "/")
+}
+
+func open(url string) error {
+    var cmd string
+    var args []string
+
+    switch runtime.GOOS {
+    case "windows":
+        cmd = "cmd"
+        args = []string{"/c", "start"}
+    case "darwin":
+        cmd = "open"
+    default:
+        cmd = "xdg-open"
+    }
+    args = append(args, url)
+    return exec.Command(cmd, args...).Start()
 }
