@@ -34,7 +34,7 @@ func main() {
 }
 
 func handleUpload(c echo.Context) error {
-	/*fileInfo, err := c.FormFile("file")
+	fileInfo, err := c.FormFile("file")
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Error when parsing files")
 	}
@@ -54,37 +54,8 @@ func handleUpload(c echo.Context) error {
 
 	io.Copy(out, file)
 
-	return c.String(http.StatusOK, "Files are uploaded")*/
-	form, err := c.MultipartForm()
-	if err != nil {
-		return err
-	}
-	files := form.File["files"]
-
-	for _, fileInfo := range files {
-		fullname := uploadsDir + fileInfo.Filename
-
-		file, err := fileInfo.Open()
-		if err != nil {
-			message := fmt.Sprintf("Error when opening %v", fullname)
-			return c.String(http.StatusBadRequest, message)
-		}
-		defer file.Close()
-
-		out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			message := fmt.Sprintf("Error when uploading file %v", fullname)
-			return c.String(http.StatusExpectationFailed, message)
-		}
-		defer out.Close()
-
-		_, err = io.Copy(out, file)
-		if err != nil {
-			message := fmt.Sprintf("Error when copying file %v", fullname)
-			return c.String(http.StatusExpectationFailed, message)
-		}
-	}
 	return c.String(http.StatusOK, "Files are uploaded")
+
 }
 
 func initLfs() error {
