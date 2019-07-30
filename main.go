@@ -15,14 +15,14 @@ import (
 	"github.com/labstack/echo"
 )
 
-const uploadsDir = "sample-files/"
-
 var remote string
 var branch string
+var uploadsDir string
 
 func main() {
 	flag.StringVar(&remote, "remote", "origin", "remote")
 	flag.StringVar(&branch, "branch", "master", "branch")
+	flag.StringVar(&uploadsDir, "folder", "sample-files", "folder to upload")
 	flag.Parse()
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
@@ -53,7 +53,8 @@ func handleUpload(c echo.Context) error {
 	var fullname string
 	for _, file := range files {
 
-		fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
+		//fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
+		fullname = filepath.Join(".", uploadsDir, file.Filename)
 
 		src, err := file.Open()
 		if err != nil {
@@ -81,7 +82,7 @@ func handleUpload(c echo.Context) error {
 
 func initLfs() error {
 	var err error
-	initLfsCmd := "git lfs install && git lfs track \"sample-files/*\" && git add .gitattributes"
+	initLfsCmd := fmt.Sprintf("git checkout -f %s && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, uploadsDir)
 	if runtime.GOOS == "windows" {
 		_, err = exec.Command("cmd", "/C", initLfsCmd).Output()
 	} else {
