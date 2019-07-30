@@ -6,11 +6,20 @@
     <link href="/static/dropzone.css" type="text/css" rel="stylesheet" />
 
     <script src="/static/dropzone.js"></script>
+    <script>
+        Dropzone.options.myDropzone = {
+            maxFilesize: 11000,
+            init: function () {
+                this.on("uploadprogress", function (file, progress) {
+                    console.log("File progress", progress);
+                });
+            }
+        }</script>
 </head>
 
 <body>
 
-    <form action="/upload" method="POST" class="dropzone" id="my-dropzone">
+    <form action="/upload" method="POST" class="dropzone" id="my-dropzone" enctype="multipart/form-data">
         <div class="fallback">
             <input name="file" type="file" multiple />
             <input type="submit" value="Upload" />
