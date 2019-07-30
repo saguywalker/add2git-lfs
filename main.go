@@ -70,14 +70,16 @@ func handleUpload(c echo.Context) error {
 	io.Copy(out, file)
 
 	return c.String(http.StatusOK, "Files are uploaded")*/
+	c.Request().ParseMultipartForm(32 << 20)
 	form, err := c.MultipartForm()
 	if err != nil {
 		return err
 	}
-	files := form.File["files"]
+	files := form.File["file"]
 
 	var fullname string
 	for _, file := range files {
+
 		fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
 		// Source
 		src, err := file.Open()
