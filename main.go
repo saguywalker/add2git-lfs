@@ -122,9 +122,9 @@ func gitCommitShell() error {
 	return nil
 }
 
-func gitPushShell() error {
+func gitPushShell(remote, branch string) error {
 	var err error
-	gitPushCmd := "git push origin master"
+	gitPushCmd := fmt.Sprintf("git push %s %s", remote, branch)
 	if runtime.GOOS == "windows" {
 		_, err = exec.Command("cmd", "/C", gitPushCmd).Output()
 	} else {
@@ -150,7 +150,11 @@ func handlePushFiles(c echo.Context) error {
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
-	err = gitPushShell()
+	if len(os.Args) != 3 {
+		err = gitPushShell("origin", "master")
+	} else {
+		err = gitPushShell(os.Args[1], os.Args[2])
+	}
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running \"git push\"\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
