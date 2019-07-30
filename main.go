@@ -17,12 +17,12 @@ import (
 
 const uploadsDir = "sample-files/"
 
-var remotePtr string
-var branchPtr string
+var remote string
+var branch string
 
 func main() {
-	flag.StringVar(&remotePtr, "remote", "origin", "remote")
-	flag.StringVar(&branchPtr, "branch", "master", "branch")
+	flag.StringVar(&remote, "remote", "origin", "remote")
+	flag.StringVar(&branch, "branch", "master", "branch")
 	flag.Parse()
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
@@ -54,7 +54,7 @@ func handleUpload(c echo.Context) error {
 	for _, file := range files {
 
 		fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
-		// Source
+
 		src, err := file.Open()
 		if err != nil {
 			message := fmt.Sprintf("Error when opening %v", file.Filename)
@@ -62,7 +62,6 @@ func handleUpload(c echo.Context) error {
 		}
 		defer src.Close()
 
-		// Destination
 		dst, err := os.Create(fullname)
 		if err != nil {
 			message := fmt.Sprintf("Error when opening %v", file.Filename)
@@ -70,7 +69,6 @@ func handleUpload(c echo.Context) error {
 		}
 		defer dst.Close()
 
-		// Copy
 		if _, err = io.Copy(dst, src); err != nil {
 			message := fmt.Sprintf("Error when opening %v", file.Filename)
 			return c.String(http.StatusBadRequest, message)
@@ -153,7 +151,7 @@ func handlePushFiles(c echo.Context) error {
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
-	err = gitPushShell(remotePtr, branchPtr)
+	err = gitPushShell(remote, branch)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running \"git push\"\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
