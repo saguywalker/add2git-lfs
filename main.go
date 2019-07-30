@@ -34,26 +34,46 @@ func main() {
 }
 
 func handleUpload(c echo.Context) error {
-	fileInfo, err := c.FormFile("file")
+	/*buf := new(bytes.Buffer)
+	writer := multipart.NewWriter(buf)
+	defer writer.Close()
+
+	part, err := writer.C
+	*/
+	form, err := c.MultipartForm()
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Error when parsing files")
 	}
-	fullname := uploadsDir + fileInfo.Filename
+	files := form.File["files"]
 
-	file, err := fileInfo.Open()
+	/*fileInfo, err := c.FormFile("file")
 	if err != nil {
-		message := fmt.Sprintf("Error when opening %v", fullname)
-		return c.String(http.StatusBadRequest, message)
+		return c.String(http.StatusBadRequest, "Error when parsing files")
+	}*/
+
+	for _, fileInfo := range files {
+		fullname := uploadsDir + fileInfo.Filename
+
+		file, err := fileInfo.Open()
+		if err != nil {
+			message := fmt.Sprintf("Error when opening %v", fullname)
+			return c.String(http.StatusBadRequest, message)
+		}
+		defer file.Close()
+
+		out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			message := fmt.Sprintf("Error when uploading file %v", fullname)
+			return c.String(http.StatusExpectationFailed, message)
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, file)
+		if err != nil {
+			message := fmt.Sprintf("Error when copying file %v", fullname)
+			return c.String(http.StatusExpectationFailed, message)
+		}
 	}
-
-	out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		message := fmt.Sprintf("Error when uploading file %v", fullname)
-		return c.String(http.StatusExpectationFailed, message)
-	}
-
-	io.Copy(out, file)
-
 	return c.String(http.StatusOK, "Files are uploaded")
 }
 
@@ -140,18 +160,18 @@ func handlePushFiles(c echo.Context) error {
 }
 
 func open(url string) error {
-    var cmd string
-    var args []string
+	var cmd string
+	var args []string
 
-    switch runtime.GOOS {
-    case "windows":
-        cmd = "cmd"
-        args = []string{"/c", "start"}
-    case "darwin":
-        cmd = "open"
-    default:
-        cmd = "xdg-open"
-    }
-    args = append(args, url)
-    return exec.Command(cmd, args...).Start()
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default:
+		cmd = "xdg-open"
+	}
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
 }
