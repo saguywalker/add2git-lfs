@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +17,14 @@ import (
 
 const uploadsDir = "sample-files/"
 
+var remotePtr string
+var branchPtr string
+
 func main() {
+	flag.StringVar(&remotePtr, "remote", "origin", "remote")
+	flag.StringVar(&branchPtr, "branch", "master", "branch")
+	flag.Parse()
+
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := initLfs()
 	if err != nil {
@@ -40,40 +48,60 @@ func handleUpload(c echo.Context) error {
 
 	part, err := writer.C
 	*/
-	form, err := c.MultipartForm()
-	if err != nil {
-		return c.String(http.StatusBadRequest, "Error when parsing files")
-	}
-	files := form.File["files"]
 
 	/*fileInfo, err := c.FormFile("file")
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Error when parsing files")
-	}*/
+	}
+	fullname := uploadsDir + fileInfo.Filename
 
-	for _, fileInfo := range files {
-		fullname := uploadsDir + fileInfo.Filename
+	file, err := fileInfo.Open()
+	if err != nil {
+		message := fmt.Sprintf("Error when opening %v", fullname)
+		return c.String(http.StatusBadRequest, message)
+	}
 
-		file, err := fileInfo.Open()
+	out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		message := fmt.Sprintf("Error when uploading file %v", fullname)
+		return c.String(http.StatusExpectationFailed, message)
+	}
+
+	io.Copy(out, file)
+
+	return c.String(http.StatusOK, "Files are uploaded")*/
+	form, err := c.MultipartForm()
+	if err != nil {
+		return err
+	}
+	files := form.File["files"]
+
+	var fullname string
+	for _, file := range files {
+		fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
+		// Source
+		src, err := file.Open()
 		if err != nil {
-			message := fmt.Sprintf("Error when opening %v", fullname)
+			message := fmt.Sprintf("Error when opening %v", file.Filename)
 			return c.String(http.StatusBadRequest, message)
 		}
-		defer file.Close()
+		defer src.Close()
 
-		out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
+		// Destination
+		dst, err := os.Create(fullname)
 		if err != nil {
-			message := fmt.Sprintf("Error when uploading file %v", fullname)
-			return c.String(http.StatusExpectationFailed, message)
+			message := fmt.Sprintf("Error when opening %v", file.Filename)
+			return c.String(http.StatusBadRequest, message)
 		}
-		defer out.Close()
+		defer dst.Close()
 
-		_, err = io.Copy(out, file)
-		if err != nil {
-			message := fmt.Sprintf("Error when copying file %v", fullname)
-			return c.String(http.StatusExpectationFailed, message)
+		// Copy
+		if _, err = io.Copy(dst, src); err != nil {
+			message := fmt.Sprintf("Error when opening %v", file.Filename)
+			return c.String(http.StatusBadRequest, message)
 		}
 	}
+
 	return c.String(http.StatusOK, "Files are uploaded")
 }
 
@@ -150,11 +178,7 @@ func handlePushFiles(c echo.Context) error {
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
-	if len(os.Args) != 3 {
-		err = gitPushShell("origin", "master")
-	} else {
-		err = gitPushShell(os.Args[1], os.Args[2])
-	}
+	err = gitPushShell(remotePtr, branchPtr)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running \"git push\"\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
