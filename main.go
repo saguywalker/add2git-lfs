@@ -42,34 +42,7 @@ func main() {
 }
 
 func handleUpload(c echo.Context) error {
-	/*buf := new(bytes.Buffer)
-	writer := multipart.NewWriter(buf)
-	defer writer.Close()
 
-	part, err := writer.C
-	*/
-
-	/*fileInfo, err := c.FormFile("file")
-	if err != nil {
-		return c.String(http.StatusBadRequest, "Error when parsing files")
-	}
-	fullname := uploadsDir + fileInfo.Filename
-
-	file, err := fileInfo.Open()
-	if err != nil {
-		message := fmt.Sprintf("Error when opening %v", fullname)
-		return c.String(http.StatusBadRequest, message)
-	}
-
-	out, err := os.OpenFile(fullname, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		message := fmt.Sprintf("Error when uploading file %v", fullname)
-		return c.String(http.StatusExpectationFailed, message)
-	}
-
-	io.Copy(out, file)
-
-	return c.String(http.StatusOK, "Files are uploaded")*/
 	c.Request().ParseMultipartForm(32 << 20)
 	form, err := c.MultipartForm()
 	if err != nil {

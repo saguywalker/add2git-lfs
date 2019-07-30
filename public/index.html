@@ -6,6 +6,15 @@
     <link href="/static/dropzone.css" type="text/css" rel="stylesheet" />
 
     <script src="/static/dropzone.js"></script>
+    <script>
+        Dropzone.options.myDropzone = {
+            maxFilesize: 11000,
+            init: function () {
+                this.on("uploadprogress", function (file, progress) {
+                    console.log("File progress", progress);
+                });
+            }
+        }</script>
 </head>
 
 <body>
