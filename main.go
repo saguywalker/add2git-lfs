@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/labstack/echo/middleware"
-
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
@@ -34,7 +32,6 @@ func main() {
 	}
 
 	e := echo.New()
-	e.Use(middleware.Logger())
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
