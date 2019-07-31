@@ -4,7 +4,7 @@ A static web application that let you upload files and push them on a specific f
 
 ## Installation
 
-1. Download an executable file directly from https://gitlab.com/saguywalker/add2git-lfs/-/releases
+1. Download an executable file directly from https://github.com/saguywalker/add2git-lfs/releases
 2. Add it to your path enviroment.
     ```bash
     echo 'export PATH=path/to/your-add2git-lfs:$PATH' >> ~/.bashrc
@@ -18,5 +18,5 @@ A static web application that let you upload files and push them on a specific f
 add2git-lfs
 
 # Upload files with specific configuration
-add2git-lfs -remote=upstream -branch=dev -folder=etc
+add2git-lfs -remote upstream -branch dev -folder etc
 ```
