@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -46,7 +47,8 @@ func handleUpload(c echo.Context) error {
 	c.Request().ParseMultipartForm(32 << 20)
 	form, err := c.MultipartForm()
 	if err != nil {
-		return err
+		message := fmt.Sprintf("Error when parsing files %s", err.Error())
+		return c.String(http.StatusBadRequest, message)
 	}
 	files := form.File["file"]
 
@@ -81,14 +83,15 @@ func handleUpload(c echo.Context) error {
 
 func initLfs() error {
 	var err error
+	out := make([]byte, 0)
 	initLfsCmd := fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, branch, uploadsDir)
 	if runtime.GOOS == "windows" {
-		_, err = exec.Command("cmd", "/C", initLfsCmd).Output()
+		out, err = exec.Command("cmd", "/C", initLfsCmd).Output()
 	} else {
-		_, err = exec.Command("bash", "-c", initLfsCmd).Output()
+		out, err = exec.Command("bash", "-c", initLfsCmd).Output()
 	}
 	if err != nil {
-		return err
+		return errors.New(string(out))
 	}
 
 	return nil
@@ -96,14 +99,15 @@ func initLfs() error {
 
 func gitAddFile(filename string) error {
 	var err error
+	out := make([]byte, 0)
 	addCmd := fmt.Sprintf("git add %v", filename)
 	if runtime.GOOS == "windows" {
-		_, err = exec.Command("cmd", "/C", addCmd).Output()
+		out, err = exec.Command("cmd", "/C", addCmd).Output()
 	} else {
-		_, err = exec.Command("bash", "-c", addCmd).Output()
+		out, err = exec.Command("bash", "-c", addCmd).Output()
 	}
 	if err != nil {
-		return err
+		return errors.New(string(out))
 	}
 
 	return nil
@@ -111,29 +115,33 @@ func gitAddFile(filename string) error {
 
 func gitCommitShell() error {
 	var err error
+	out := make([]byte, 0)
 	if runtime.GOOS == "windows" {
 		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
-		_, err = exec.Command("cmd", "/C", commitCmd).Output()
+		out, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
 		commitCmd := fmt.Sprintf("git commit -m \"upload files to %s\"", uploadsDir)
-		_, err = exec.Command("bash", "-c", commitCmd).Output()
+		out, err = exec.Command("bash", "-c", commitCmd).Output()
 	}
+
 	if err != nil {
-		return err
+		return errors.New(string(out))
 	}
+
 	return nil
 }
 
 func gitPushShell(remote, branch string) error {
 	var err error
+	out := make([]byte, 0)
 	gitPushCmd := fmt.Sprintf("git push %s %s", remote, branch)
 	if runtime.GOOS == "windows" {
-		_, err = exec.Command("cmd", "/C", gitPushCmd).Output()
+		out, err = exec.Command("cmd", "/C", gitPushCmd).Output()
 	} else {
-		_, err = exec.Command("bash", "-c", gitPushCmd).Output()
+		out, err = exec.Command("bash", "-c", gitPushCmd).Output()
 	}
 	if err != nil {
-		return err
+		return errors.New(string(out))
 	}
 
 	return nil
@@ -142,19 +150,19 @@ func gitPushShell(remote, branch string) error {
 func handlePushFiles(c echo.Context) error {
 	err := gitAddFile(uploadsDir)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error when running \"git add %s\"\n%s", uploadsDir, err.Error())
+		errMsg := fmt.Sprintf("Error when running git add %s\n\n***************************************************\n%s", uploadsDir, err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	err = gitCommitShell()
 	if err != nil {
-		errMsg := fmt.Sprintf("Error when running \"git commit\"\n%s", err.Error())
+		errMsg := fmt.Sprintf("Error when running git commit\n\n***************************************************\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	err = gitPushShell(remote, branch)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error when running \"git push\"\n%s", err.Error())
+		errMsg := fmt.Sprintf("Error when running git push\n\n***************************************************\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
