@@ -23,9 +23,9 @@ func init() {
 	}
 	file4 := &embedded.EmbeddedFile{
 		Filename:    "index.html",
-		FileModTime: time.Unix(1564556339, 0),
+		FileModTime: time.Unix(1564572652, 0),
 
-		Content: string("<html>\n\n<head>\n    <title>add2git-lfs</title>\n\n    <link href=\"/static/dropzone.css\" type=\"text/css\" rel=\"stylesheet\" />\n\n    <script src=\"/static/dropzone.js\"></script>\n    <script>\n        Dropzone.options.myDropzone = {\n            maxFilesize: 11000,\n            init: function () {\n                this.on(\"uploadprogress\", function (file, progress) {\n                    console.log(\"File progress\", progress);\n                });\n            }\n        }</script>\n</head>\n\n<body>\n\n    <form action=\"/upload\" method=\"POST\" class=\"dropzone\" id=\"my-dropzone\" enctype=\"multipart/form-data\">\n        <div class=\"fallback\">\n            <input name=\"file\" type=\"file\" multiple />\n            <input type=\"submit\" value=\"Upload\" />\n        </div>\n    </form>\n    <form action=\"/pushfiles\" method=\"POST\" id=\"submit-form\">\n    </form>\n    <button type=\"submit\" form=\"submit-form\" value=\"Submit\">Push Files</button>\n</body>\n\n</html>"),
+		Content: string("<html>\n\n<head>\n    <title>CinCan: add2git-lfs</title>\n\n    <link href=\"/static/dropzone.css\" type=\"text/css\" rel=\"stylesheet\" />\n\n    <script src=\"/static/dropzone.js\"></script>\n    <script>\n        Dropzone.options.myDropzone = {\n            maxFilesize: 11000,\n            init: function () {\n                this.on(\"uploadprogress\", function (file, progress) {\n                    console.log(\"File progress\", progress);\n                });\n            }\n        }</script>\n</head>\n\n<body>\n    <h1 align=\"center\">CinCan: add2git-lfs</h1>\n    <form action=\"/upload\" method=\"POST\" class=\"dropzone\" id=\"my-dropzone\" enctype=\"multipart/form-data\">\n        <div class=\"fallback\">\n            <input name=\"file\" type=\"file\" multiple />\n            <input type=\"submit\" value=\"Upload\" />\n        </div>\n    </form>\n    <form action=\"/pushfiles\" method=\"POST\" id=\"submit-form\">\n    </form>\n    <button type=\"submit\" form=\"submit-form\" value=\"Submit\">Push Files</button>\n</body>\n\n</html>"),
 	}
 
 	// define dirs
