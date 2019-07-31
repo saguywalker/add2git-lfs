@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/labstack/echo/middleware"
+
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
@@ -32,6 +34,7 @@ func main() {
 	}
 
 	e := echo.New()
+	e.Use(middleware.Logger())
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
@@ -53,7 +56,6 @@ func handleUpload(c echo.Context) error {
 	var fullname string
 	for _, file := range files {
 
-		//fullname = fmt.Sprintf("%s%s", uploadsDir, file.Filename)
 		fullname = filepath.Join(".", uploadsDir, file.Filename)
 
 		src, err := file.Open()
@@ -82,7 +84,7 @@ func handleUpload(c echo.Context) error {
 
 func initLfs() error {
 	var err error
-	initLfsCmd := fmt.Sprintf("git checkout -f %s && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, uploadsDir)
+	initLfsCmd := fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, branch, uploadsDir)
 	if runtime.GOOS == "windows" {
 		_, err = exec.Command("cmd", "/C", initLfsCmd).Output()
 	} else {
@@ -113,10 +115,10 @@ func gitAddFile(filename string) error {
 func gitCommitShell() error {
 	var err error
 	if runtime.GOOS == "windows" {
-		commitCmd := "git commit -m upload-sample-files"
+		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
 		_, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		commitCmd := "git commit -m upload-sample-files"
+		commitCmd := fmt.Sprintf("git commit -m \"upload files to %s\"", uploadsDir)
 		_, err = exec.Command("bash", "-c", commitCmd).Output()
 	}
 	if err != nil {
@@ -141,9 +143,9 @@ func gitPushShell(remote, branch string) error {
 }
 
 func handlePushFiles(c echo.Context) error {
-	err := gitAddFile("sample-files")
+	err := gitAddFile(uploadsDir)
 	if err != nil {
-		errMsg := fmt.Sprintf("Error when running \"git add sample-files\"\n%s", err.Error())
+		errMsg := fmt.Sprintf("Error when running \"git add %s\"\n%s", uploadsDir, err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
