@@ -4,6 +4,7 @@ A static web application that let you upload files and push them on a specific f
 
 ## Installation
 
+0. Install Git-LFS (see: https://github.com/git-lfs/git-lfs/releases)
 1. Download an executable file directly from https://github.com/saguywalker/add2git-lfs/releases
 2. Add it to your path enviroment.
     ```bash
