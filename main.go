@@ -14,6 +14,7 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
+	
 )
 
 var remote string
@@ -81,15 +82,54 @@ func handleUpload(c echo.Context) error {
 
 }
 
+func whichGit() (string, error){
+	out, err := exec.Command("which", "git").Output()
+	if err != nil{
+		return "", errors.New(string(out)+ "\n" + err.Error())
+	}
+	return string(out), nil
+}
+
+func whichLfs() (string, error){
+	out, err := exec.Command("which", "git-lfs").Output()
+	if err != nil{
+		return "", errors.New(string(out) + "\n" + err.Error())
+	}
+	return string(out), nil
+}
+
 func initLfs() error {
 	var err error
 	out := make([]byte, 0)
-	initLfsCmd := fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, branch, uploadsDir)
 	if runtime.GOOS == "windows" {
+		initLfsCmd := fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", branch, branch, uploadsDir)
 		out, err = exec.Command("cmd", "/C", initLfsCmd).Output()
 	} else {
-		out, err = exec.Command("sh", "-c", initLfsCmd).Output()
+		exec.Command("git", "checkout -f").Output()
+
+		_, err = exec.Command("git", "checkout", branch).Output()
+		if err != nil{
+			exec.Command("git", "checkout -b", branch)
+		}
+
+		out, err = exec.Command("git-lfs", "install").Output()
+		if err != nil {
+			return errors.New(string(out)+ "\n" + err.Error())
+		}
+
+		out, err = exec.Command("git-lfs", "track", uploadsDir).Output()
+		if err != nil {
+			return errors.New(string(out)+ "\n" + err.Error())
+		}
+
+		out, err = exec.Command("git", "add", ".gitattributes").Output()
+		if err != nil {
+			return errors.New(string(out)+ "\n" + err.Error())
+		}
+
+		out, err = exec.Command("git", "config", "http.sslVerify", "false").Output()
 	}
+
 	if err != nil {
 		return errors.New(string(out)+ "\n" + err.Error())
 	}
@@ -100,11 +140,11 @@ func initLfs() error {
 func gitAddFile(filename string) error {
 	var err error
 	out := make([]byte, 0)
-	addCmd := fmt.Sprintf("git add %v", filename)
 	if runtime.GOOS == "windows" {
+		addCmd := fmt.Sprintf("git add %v", filename)
 		out, err = exec.Command("cmd", "/C", addCmd).Output()
 	} else {
-		out, err = exec.Command("sh", "-c", addCmd).Output()
+		out, err = exec.Command("git", "add", filename).Output()
 	}
 	if err != nil {
 		return errors.New(string(out)+ "\n" + err.Error())
@@ -116,12 +156,13 @@ func gitAddFile(filename string) error {
 func gitCommitShell() error {
 	var err error
 	out := make([]byte, 0)
+	var commitCmd string
 	if runtime.GOOS == "windows" {
-		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
+		commitCmd = fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
 		out, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		commitCmd := fmt.Sprintf("git commit -m \"upload files to %s\"", uploadsDir)
-		out, err = exec.Command("sh", "-c", commitCmd).Output()
+		commitCmd = fmt.Sprintf("\"upload files to %s\"", uploadsDir)
+		out, err = exec.Command("git", "commit", "-m", commitCmd).Output()
 	}
 
 	if err != nil {
@@ -134,11 +175,11 @@ func gitCommitShell() error {
 func gitPushShell(remote, branch string) error {
 	var err error
 	out := make([]byte, 0)
-	gitPushCmd := fmt.Sprintf("git push %s %s", remote, branch)
 	if runtime.GOOS == "windows" {
+		gitPushCmd := fmt.Sprintf("git push %s %s", remote, branch)
 		out, err = exec.Command("cmd", "/C", gitPushCmd).Output()
 	} else {
-		out, err = exec.Command("sh", "-c", gitPushCmd).Output()
+		out, err = exec.Command("git", "push", remote, branch).Output()
 	}
 	if err != nil {
 		return errors.New(string(out)+ "\n" + err.Error())
