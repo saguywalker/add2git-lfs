@@ -88,7 +88,7 @@ func initLfs() error {
 	if runtime.GOOS == "windows" {
 		out, err = exec.Command("cmd", "/C", initLfsCmd).Output()
 	} else {
-		out, err = exec.Command("bash", "-c", initLfsCmd).Output()
+		out, err = exec.Command("sh", "-c", initLfsCmd).Output()
 	}
 	if err != nil {
 		return errors.New(string(out))
@@ -104,7 +104,7 @@ func gitAddFile(filename string) error {
 	if runtime.GOOS == "windows" {
 		out, err = exec.Command("cmd", "/C", addCmd).Output()
 	} else {
-		out, err = exec.Command("bash", "-c", addCmd).Output()
+		out, err = exec.Command("sh", "-c", addCmd).Output()
 	}
 	if err != nil {
 		return errors.New(string(out))
@@ -121,7 +121,7 @@ func gitCommitShell() error {
 		out, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
 		commitCmd := fmt.Sprintf("git commit -m \"upload files to %s\"", uploadsDir)
-		out, err = exec.Command("bash", "-c", commitCmd).Output()
+		out, err = exec.Command("sh", "-c", commitCmd).Output()
 	}
 
 	if err != nil {
@@ -138,7 +138,7 @@ func gitPushShell(remote, branch string) error {
 	if runtime.GOOS == "windows" {
 		out, err = exec.Command("cmd", "/C", gitPushCmd).Output()
 	} else {
-		out, err = exec.Command("bash", "-c", gitPushCmd).Output()
+		out, err = exec.Command("sh", "-c", gitPushCmd).Output()
 	}
 	if err != nil {
 		return errors.New(string(out))
