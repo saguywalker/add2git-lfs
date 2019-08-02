@@ -30,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
-	err := helper.InitLfs(branch)
+	err := helper.InitLfs(branch, uploadsDir)
 	if err != nil {
 		panic(err)
 	}

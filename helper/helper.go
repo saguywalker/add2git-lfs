@@ -23,7 +23,7 @@ func WhichLfs() (string, error) {
 	return string(out), nil
 }
 
-func InitLfs(branch string) error {
+func InitLfs(branch, uploadsDir string) error {
 	var err error
 	out := make([]byte, 0)
 	if runtime.GOOS == "windows" {
