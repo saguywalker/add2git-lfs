@@ -19,11 +19,13 @@ import (
 var remote string
 var branch string
 var uploadsDir string
+var token string
 
 func main() {
 	flag.StringVar(&remote, "remote", "origin", "remote")
 	flag.StringVar(&branch, "branch", "master", "branch")
 	flag.StringVar(&uploadsDir, "folder", "sample-files", "folder to upload")
+	flag.StringVar(&token, "token", "", "personal access token (https)")
 	flag.Parse()
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
@@ -136,14 +138,14 @@ func initLfs() error {
 	return nil
 }
 
-func gitAddFile(filename string) error {
+func gitAddFile() error {
 	var err error
 	out := make([]byte, 0)
 	if runtime.GOOS == "windows" {
-		addCmd := fmt.Sprintf("git add %v", filename)
+		addCmd := fmt.Sprintf("git add %v", uploadsDir)
 		out, err = exec.Command("cmd", "/C", addCmd).Output()
 	} else {
-		out, err = exec.Command("git", "add", filename).Output()
+		out, err = exec.Command("git", "add", uploadsDir).Output()
 	}
 	if err != nil {
 		return errors.New(string(out) + "\n" + err.Error())
@@ -155,12 +157,11 @@ func gitAddFile(filename string) error {
 func gitCommitShell() error {
 	var err error
 	out := make([]byte, 0)
-	var commitCmd string
 	if runtime.GOOS == "windows" {
-		commitCmd = fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
+		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
 		out, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		commitCmd = fmt.Sprintf("\"upload files to %s\"", uploadsDir)
+		commitCmd := fmt.Sprintf("\"upload files to %s\"", uploadsDir)
 		out, err = exec.Command("git", "commit", "-m", commitCmd).Output()
 	}
 
@@ -171,7 +172,7 @@ func gitCommitShell() error {
 	return nil
 }
 
-func gitPushShell(remote, branch string) error {
+func gitPushShell() error {
 	var err error
 	out := make([]byte, 0)
 	if runtime.GOOS == "windows" {
@@ -187,8 +188,37 @@ func gitPushShell(remote, branch string) error {
 	return nil
 }
 
+func gitPushToken() error {
+	var err error
+	out := make([]byte, 0)
+	gitURL := fmt.Sprintf("remote.%s.url", remote)
+
+	if runtime.GOOS == "windows" {
+		out, err = exec.Command("cmd", "/C", "git config "+gitURL).Output()
+		if err != nil {
+			return fmt.Errorf("Not found git url from git config %s", gitURL)
+		}
+
+		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, string(out[8:len(out)-1]))
+		out, err = exec.Command("cmd", "/C", "git push "+pushCommand).Output()
+	} else {
+		out, err = exec.Command("git", "config", gitURL).Output()
+		if err != nil {
+			return fmt.Errorf("Not found git url from git config %s", gitURL)
+		}
+
+		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, string(out[8:len(out)-1]))
+		out, err = exec.Command("git", "push", pushCommand).Output()
+	}
+	if err != nil {
+		return errors.New(string(out) + "\n" + err.Error())
+	}
+
+	return nil
+}
+
 func handlePushFiles(c echo.Context) error {
-	err := gitAddFile(uploadsDir)
+	err := gitAddFile()
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running git add %s\n\n***************************************************\n%s", uploadsDir, err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
@@ -200,7 +230,12 @@ func handlePushFiles(c echo.Context) error {
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
-	err = gitPushShell(remote, branch)
+	if token == "" {
+		err = gitPushShell()
+	} else {
+		err = gitPushShell()
+	}
+	err = gitPushShell()
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running git push\n\n***************************************************\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
