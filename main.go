@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/add2git-lfs/gitcommand"
-	"github.com/add2git-lfs/helper"
+	"github.com/saguywalker/add2git-lfs/gitcommand"
+	"github.com/saguywalker/add2git-lfs/helper"
 
 	rice "github.com/GeertJohan/go.rice"
 
