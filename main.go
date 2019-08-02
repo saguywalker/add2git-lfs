@@ -85,22 +85,22 @@ func handleUpload(c echo.Context) error {
 }
 
 func handlePushFiles(c echo.Context) error {
-	err := gitcommand.GitAddFile()
+	err := gitcommand.GitAddFile(uploadsDir)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running git add %s\n\n***************************************************\n%s", uploadsDir, err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
-	err = gitcommand.GitCommitShell()
+	err = gitcommand.GitCommitShell(uploadsDir)
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running git commit\n\n***************************************************\n%s", err.Error())
 		return c.String(http.StatusExpectationFailed, errMsg)
 	}
 
 	if token == "" {
-		err = gitcommand.GitPushShell()
+		err = gitcommand.GitPushShell(remote, branch)
 	} else {
-		err = gitcommand.GitPushToken()
+		err = gitcommand.GitPushToken(remote, branch, token)
 	}
 	if err != nil {
 		errMsg := fmt.Sprintf("Error when running git push\n\n***************************************************\n%s", err.Error())
