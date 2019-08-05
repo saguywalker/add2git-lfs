@@ -87,17 +87,16 @@ func GitPushToken(remote, branch, token string) error {
 
 	var command *exec.Cmd
 	if runtime.GOOS == "windows" {
-		runCommand := fmt.Sprintf("git push %s HEAD:%s", pushCommand, branch)
+		runCommand := fmt.Sprintf("git push %s %s", pushCommand, branch)
 		command = exec.Command("cmd", "/C", runCommand)
 		out, err = command.Output()
 	} else {
-		headBranch := fmt.Sprintf("HEAD:%s", branch)
-		command = exec.Command("git", "push", pushCommand, headBranch)
+		command = exec.Command("git", "push", pushCommand, branch)
 		out, err = command.Output()
 	}
 
 	if err != nil {
-		return fmt.Errorf("%s\n%s\n%s", command, string(out), err.Error())
+		return fmt.Errorf("%+v\n%s\n%s", command, string(out), err.Error())
 	}
 
 	return nil

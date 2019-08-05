@@ -31,9 +31,9 @@ func InitLfs(branch, uploadsDir string) error {
 	} else {
 		exec.Command("git", "checkout -f").Output()
 
-		_, err = exec.Command("git", "checkout", branch).Output()
+		err = exec.Command("git", "checkout", branch).Run()
 		if err != nil {
-			exec.Command("git", "checkout -b", branch)
+			exec.Command("git", "checkout", "-b", branch).Run()
 		}
 
 		out, err = exec.Command("git-lfs", "install").Output()
