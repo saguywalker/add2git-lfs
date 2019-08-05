@@ -64,30 +64,30 @@ func GitPushToken(remote, branch, token string) error {
 
 	if runtime.GOOS == "windows" {
 		out, err = exec.Command("cmd", "/C", "git config "+gitURLCommand).Output()
-		if err != nil {
-			return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
-		}
-
-		gitURL, err := splitGitURL(out)
-		if err != nil {
-			return nil
-		}
-
-		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, gitURL)
-		out, err = exec.Command("cmd", "/C", "git push "+pushCommand+" "+branch).Output()
 	} else {
 		out, err = exec.Command("git", "config", gitURLCommand).Output()
-		if err != nil {
-			return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
-		}
 
-		gitURL, err := splitGitURL(out)
-		if err != nil {
-			return nil
-		}
+	}
+	if err != nil {
+		return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
+	}
 
-		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, gitURL)
-		out, err = exec.Command("git", "push", pushCommand, branch).Output()
+	gitURL, isHTTPS, err := splitGitURL(out)
+	if err != nil {
+		return nil
+	}
+
+	var pushCommand string
+	if isHTTPS {
+		pushCommand = fmt.Sprintf("https://oauth2:%s@%s", token, gitURL)
+	} else {
+		pushCommand = fmt.Sprintf("http://oauth2:%s@%s", token, gitURL)
+	}
+
+	if runtime.GOOS == "windows" {
+		out, err = exec.Command("cmd", "/C", "git push "+pushCommand+" HEAD:"+branch).Output()
+	} else {
+		out, err = exec.Command("git", "push", pushCommand, "HEAD:"+branch).Output()
 	}
 
 	if err != nil {
@@ -95,13 +95,15 @@ func GitPushToken(remote, branch, token string) error {
 	}
 
 	return nil
+
 }
 
-func splitGitURL(url []byte) (string, error) {
+func splitGitURL(url []byte) (string, bool, error) {
 	if len(url) < 17 {
-		return "", errors.New("too short url")
+		return "", false, errors.New("too short url")
 	}
 
+	isHTTPS := false
 	var host []byte
 	var user []byte
 	var repo []byte
@@ -121,6 +123,7 @@ func splitGitURL(url []byte) (string, error) {
 				repo = url[endUser+1:]
 			}
 		}
+		isHTTPS = true
 	} else if string(url[:7]) == "http://" {
 		url = url[7:]
 		for i, x := range url {
@@ -148,7 +151,7 @@ func splitGitURL(url []byte) (string, error) {
 			}
 		}
 	} else {
-		return "", errors.New("wrong format")
+		return "", false, errors.New("wrong format")
 	}
 
 	output := append(host, '/')
@@ -160,5 +163,5 @@ func splitGitURL(url []byte) (string, error) {
 		repo = append(repo, []byte(".git")...)
 	}
 
-	return string(output), nil
+	return string(output), isHTTPS, nil
 }
