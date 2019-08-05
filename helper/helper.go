@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -10,7 +9,7 @@ import (
 func WhichGit() (string, error) {
 	out, err := exec.Command("which", "git").Output()
 	if err != nil {
-		return "", errors.New(string(out) + "\n" + err.Error())
+		return "", fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 	return string(out), nil
 }
@@ -18,7 +17,7 @@ func WhichGit() (string, error) {
 func WhichLfs() (string, error) {
 	out, err := exec.Command("which", "git-lfs").Output()
 	if err != nil {
-		return "", errors.New(string(out) + "\n" + err.Error())
+		return "", fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 	return string(out), nil
 }
@@ -39,24 +38,24 @@ func InitLfs(branch, uploadsDir string) error {
 
 		out, err = exec.Command("git-lfs", "install").Output()
 		if err != nil {
-			return errors.New(string(out) + "\n" + err.Error())
+			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
 		out, err = exec.Command("git-lfs", "track", uploadsDir).Output()
 		if err != nil {
-			return errors.New(string(out) + "\n" + err.Error())
+			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
 		out, err = exec.Command("git", "add", ".gitattributes").Output()
 		if err != nil {
-			return errors.New(string(out) + "\n" + err.Error())
+			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
 		out, err = exec.Command("git", "config", "http.sslVerify", "false").Output()
 	}
 
 	if err != nil {
-		return errors.New(string(out) + "\n" + err.Error())
+		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
 	return nil

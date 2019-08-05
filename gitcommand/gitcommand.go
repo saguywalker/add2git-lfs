@@ -17,7 +17,7 @@ func GitAddFile(uploadsDir string) error {
 		out, err = exec.Command("git", "add", uploadsDir).Output()
 	}
 	if err != nil {
-		return errors.New(string(out) + "\n" + err.Error())
+		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
 	return nil
@@ -35,7 +35,7 @@ func GitCommitShell(uploadsDir string) error {
 	}
 
 	if err != nil {
-		return errors.New(string(out) + "\n" + err.Error())
+		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
 	return nil
@@ -51,7 +51,7 @@ func GitPushShell(remote, branch string) error {
 		out, err = exec.Command("git", "push", remote, branch).Output()
 	}
 	if err != nil {
-		return errors.New(string(out) + "\n" + err.Error())
+		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
 	return nil
@@ -85,16 +85,19 @@ func GitPushToken(remote, branch, token string) error {
 		pushCommand = fmt.Sprintf("http://oauth2:%s@%s", token, gitURL)
 	}
 
+	var command *exec.Cmd
 	if runtime.GOOS == "windows" {
-		command := fmt.Sprintf("git push %s HEAD:%s", pushCommand, branch)
-		out, err = exec.Command("cmd", "/C", command).Output()
+		runCommand := fmt.Sprintf("git push %s HEAD:%s", pushCommand, branch)
+		command = exec.Command("cmd", "/C", runCommand)
+		out, err = command.Output()
 	} else {
-		command := fmt.Sprintf("HEAD:%s", branch)
-		out, err = exec.Command("git", "push", pushCommand, command).Output()
+		headBranch := fmt.Sprintf("HEAD:%s", branch)
+		command = exec.Command("git", "push", pushCommand, headBranch)
+		out, err = command.Output()
 	}
 
 	if err != nil {
-		return errors.New(pushCommand + "\n" + string(out) + "\n" + err.Error())
+		return fmt.Errorf("%s\n%s\n%s", command, string(out), err.Error())
 	}
 
 	return nil
