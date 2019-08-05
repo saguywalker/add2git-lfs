@@ -60,28 +60,89 @@ func GitPushShell(remote, branch string) error {
 func GitPushToken(remote, branch, token string) error {
 	var err error
 	out := make([]byte, 0)
-	gitURL := fmt.Sprintf("remote.%s.url", remote)
+	gitURLCommand := fmt.Sprintf("remote.%s.url", remote)
 
 	if runtime.GOOS == "windows" {
-		out, err = exec.Command("cmd", "/C", "git config "+gitURL).Output()
+		out, err = exec.Command("cmd", "/C", "git config "+gitURLCommand).Output()
 		if err != nil {
-			return fmt.Errorf("Not found git url from git config %s", gitURL)
+			return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
 		}
 
-		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, string(out[8:len(out)-1]))
+		gitURL, err := splitGitURL(out)
+		if err != nil {
+			return nil
+		}
+
+		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, gitURL)
 		out, err = exec.Command("cmd", "/C", "git push "+pushCommand+" "+branch).Output()
 	} else {
-		out, err = exec.Command("git", "config", gitURL).Output()
+		out, err = exec.Command("git", "config", gitURLCommand).Output()
 		if err != nil {
-			return fmt.Errorf("Not found git url from git config %s", gitURL)
+			return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
 		}
 
-		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, string(out[8:len(out)-1]))
+		gitURL, err := splitGitURL(out)
+		if err != nil {
+			return nil
+		}
+
+		pushCommand := fmt.Sprintf("https://oauth2:%s@%s", token, gitURL)
 		out, err = exec.Command("git", "push", pushCommand, branch).Output()
 	}
+
 	if err != nil {
 		return errors.New(string(out) + "\n" + err.Error())
 	}
 
 	return nil
+}
+
+func splitGitURL(url []byte) (string, error) {
+	if len(url) < 17 {
+		return "", errors.New("too short url")
+	}
+
+	var host []byte
+	var user []byte
+	var repo []byte
+	var endHost int
+	var endUser int
+
+	if string(url[:8]) == "https://" {
+		url = url[8:]
+		for i, x := range url {
+			if x == '/' && endHost == 0 {
+				endHost = i
+				host = url[:endHost]
+			} else if x == '/' && endHost != 0 {
+				endUser = i
+				user = url[endHost+1 : endUser]
+
+				repo = url[endUser+1:]
+				repo = append(repo, []byte(".git")...)
+			}
+		}
+	} else if string(url[:4]) == "git@" {
+		url = url[4:]
+		for i, x := range url {
+			if x == ':' {
+				endHost = i
+				host = url[:endHost]
+			} else if x == '/' {
+				endUser = i
+				user = url[endHost+1 : endUser]
+
+				repo = url[endUser+1:]
+			}
+		}
+	} else {
+		return "", errors.New("wrong format")
+	}
+
+	output := append(host, '/')
+	output = append(output, user...)
+	output = append(output, '/')
+	output = append(output, repo...)
+
+	return string(output), nil
 }
