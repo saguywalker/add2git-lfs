@@ -91,7 +91,7 @@ func GitPushToken(remote, branch, token string) error {
 	}
 
 	if err != nil {
-		return errors.New(string(out) + "\n" + err.Error())
+		return errors.New(pushCommand + "\n" + string(out) + "\n" + err.Error())
 	}
 
 	return nil

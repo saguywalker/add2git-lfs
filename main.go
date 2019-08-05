@@ -22,12 +22,14 @@ var uploadsDir string
 var token string
 
 func main() {
-
 	flag.StringVar(&remote, "remote", "origin", "remote")
 	flag.StringVar(&branch, "branch", "master", "branch")
 	flag.StringVar(&uploadsDir, "folder", "sample-files", "folder to upload")
 	flag.StringVar(&token, "token", "", "personal access token (https)")
 	flag.Parse()
+
+	fmt.Println("************Debugging*************")
+	fmt.Printf("%s\n%s\%s\%s\n", remote, branch, uploadsDir, token)
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := helper.InitLfs(branch, uploadsDir)
