@@ -63,7 +63,7 @@ func GitPushToken(remote, branch, token string) error {
 	gitURLCommand := fmt.Sprintf("remote.%s.url", remote)
 
 	if runtime.GOOS == "windows" {
-		out, err = exec.Command("cmd", "/C", "git config "+gitURLCommand).Output()
+		out, err = exec.Command("cmd", "/C", fmt.Printf("git config %s", gitURLCommand)).Output()
 	} else {
 		out, err = exec.Command("git", "config", gitURLCommand).Output()
 
@@ -85,9 +85,9 @@ func GitPushToken(remote, branch, token string) error {
 	}
 
 	if runtime.GOOS == "windows" {
-		out, err = exec.Command("cmd", "/C", "git push "+pushCommand+" HEAD:"+branch).Output()
+		out, err = exec.Command("cmd", "/C", fmt.Printlf("git push %s HEAD:%s", pushCommand, branch)).Output()
 	} else {
-		out, err = exec.Command("git", "push", pushCommand, "HEAD:"+branch).Output()
+		out, err = exec.Command("git", "push", pushCommand, fmt.Printf("HEAD:%s", branch)).Output()
 	}
 
 	if err != nil {

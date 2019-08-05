@@ -28,9 +28,6 @@ func main() {
 	flag.StringVar(&token, "token", "", "personal access token (https)")
 	flag.Parse()
 
-	fmt.Println("************Debugging*************")
-	fmt.Printf("%s\n%s\n%s\n%s\n", remote, branch, uploadsDir, token)
-
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := helper.InitLfs(branch, uploadsDir)
 	if err != nil {
