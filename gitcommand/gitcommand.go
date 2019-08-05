@@ -121,6 +121,19 @@ func splitGitURL(url []byte) (string, error) {
 				repo = url[endUser+1:]
 			}
 		}
+	} else if string(url[:7]) == "http://" {
+		url = url[7:]
+		for i, x := range url {
+			if x == '/' && endHost == 0 {
+				endHost = i
+				host = url[:endHost]
+			} else if x == '/' && endHost != 0 {
+				endUser = i
+				user = url[endHost+1 : endUser]
+
+				repo = url[endUser+1:]
+			}
+		}
 	} else if string(url[:4]) == "git@" {
 		url = url[4:]
 		for i, x := range url {
