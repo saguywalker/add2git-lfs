@@ -119,7 +119,6 @@ func splitGitURL(url []byte) (string, error) {
 				user = url[endHost+1 : endUser]
 
 				repo = url[endUser+1:]
-				repo = append(repo, []byte(".git")...)
 			}
 		}
 	} else if string(url[:4]) == "git@" {
@@ -143,6 +142,10 @@ func splitGitURL(url []byte) (string, error) {
 	output = append(output, user...)
 	output = append(output, '/')
 	output = append(output, repo...)
+
+	if string(output[len(output)-4:]) != ".git" {
+		repo = append(repo, []byte(".git")...)
+	}
 
 	return string(output), nil
 }
