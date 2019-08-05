@@ -20,18 +20,36 @@ var remote string
 var branch string
 var uploadsDir string
 var token string
+var user string
+var email string
 
 func main() {
 	flag.StringVar(&remote, "remote", "origin", "remote")
 	flag.StringVar(&branch, "branch", "master", "branch")
 	flag.StringVar(&uploadsDir, "folder", "sample-files", "folder to upload")
 	flag.StringVar(&token, "token", "", "personal access token (https)")
+	flag.StringVar(&user, "user", "", "user.name for commit")
+	flag.StringVar(&email, "email", "", "user.email for commit")
 	flag.Parse()
 
 	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
 	err := helper.InitLfs(branch, uploadsDir)
 	if err != nil {
 		panic(err)
+	}
+
+	if user != "" {
+		err = helper.ConfigUser(user, "user")
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if email != "" {
+		err = helper.ConfigUser(email, "email")
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	e := echo.New()

@@ -30,7 +30,7 @@ func GitCommitShell(uploadsDir string) error {
 		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", uploadsDir)
 		out, err = exec.Command("cmd", "/C", commitCmd).Output()
 	} else {
-		commitCmd := fmt.Sprintf("\"upload files to %s\"", uploadsDir)
+		commitCmd := fmt.Sprintf("upload files to %s", uploadsDir)
 		out, err = exec.Command("git", "commit", "-m", commitCmd).Output()
 	}
 

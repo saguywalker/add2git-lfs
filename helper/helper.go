@@ -77,3 +77,19 @@ func Open(url string) error {
 	args = append(args, url)
 	return exec.Command(cmd, args...).Start()
 }
+
+func ConfigUser(user, configType string) error {
+	out := make([]byte, 0)
+	var err error
+
+	if runtime.GOOS == "windows" {
+		out, err = exec.Command("cmd", "/C", fmt.Sprintf("git config user.%s \"%s\"", configType, user)).Output()
+	} else {
+		out, err = exec.Command("git", "config", fmt.Sprintf("user.%s", configType), fmt.Sprintf("\"%s\"", user)).Output()
+	}
+
+	if err != nil {
+		return fmt.Errorf("%s\n%s", out, err)
+	}
+	return nil
+}
