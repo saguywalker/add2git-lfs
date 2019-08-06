@@ -20,4 +20,7 @@ add2git-lfs
 
 # Upload files with specific configuration
 add2git-lfs -remote upstream -branch dev -folder etc
+
+# You can also specify username and email for git configuration
+addd2git-lfs -branch somebranch -user saguywalker -email saguywalker@protonmail.com
 ```
