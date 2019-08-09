@@ -2,127 +2,76 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/saguywalker/add2git-lfs/gitcommand"
-	"github.com/saguywalker/add2git-lfs/helper"
 
 	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/labstack/echo"
 )
 
-var remote string
-var branch string
-var uploadsDir string
-var token string
-var user string
-var email string
-
 func main() {
-	flag.StringVar(&remote, "remote", "origin", "remote")
-	flag.StringVar(&branch, "branch", "master", "branch")
-	flag.StringVar(&uploadsDir, "folder", "sample-files", "folder to upload")
-	flag.StringVar(&token, "token", "", "personal access token (https)")
-	flag.StringVar(&user, "user", "", "user.name for commit")
-	flag.StringVar(&email, "email", "", "user.email for commit")
+	branch := flag.String("branch", "master", "branch")
+	email := flag.String("email", "", "user.email for commit")
+	remote := flag.String("remote", "origin", "remote")
+	token := flag.String("token", "", "personal access token")
+	uploadsDir := flag.String("folder", "sample-files", "folder to upload files")
+	url := flag.String("url", "http://localhost:12358/", "URL for a web application")
+	user := flag.String("user", "", "user.name for commit")
+
 	flag.Parse()
 
-	os.MkdirAll(filepath.Join(".", uploadsDir), os.ModePerm)
-	err := helper.InitLfs(branch, uploadsDir)
+	config := gitcommand.NewConfig(*branch, *email, *remote, *token, *uploadsDir, *user)
+
+	if config.User != "" {
+		err := config.ConfigUser("Name")
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if *email != "" {
+		err := config.ConfigUser("Email")
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	os.MkdirAll(filepath.Join(".", config.UploadsDir), os.ModePerm)
+	err := config.InitLfs()
 	if err != nil {
 		panic(err)
-	}
-
-	if user != "" {
-		err = helper.ConfigUser(user, "user")
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if email != "" {
-		err = helper.ConfigUser(email, "email")
-		if err != nil {
-			panic(err)
-		}
 	}
 
 	e := echo.New()
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
-	e.POST("/upload", handleUpload)
-	e.POST("/pushfiles", handlePushFiles)
-	go helper.Open("http://localhost:12358/")
+	e.POST("/upload", config.HandleUpload)
+	e.POST("/pushfiles", config.HandlePushFiles)
+	go Open(*url)
 	e.Logger.Fatal(e.Start(":12358"))
 }
 
-func handleUpload(c echo.Context) error {
+//Open a browser according to URL
+func Open(url string) error {
+	var cmd string
+	var args []string
 
-	c.Request().ParseMultipartForm(32 << 20)
-	form, err := c.MultipartForm()
-	if err != nil {
-		message := fmt.Sprintf("Error when parsing files %s", err.Error())
-		return c.String(http.StatusBadRequest, message)
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default:
+		cmd = "xdg-open"
 	}
-	files := form.File["file"]
-
-	var fullname string
-	for _, file := range files {
-
-		fullname = filepath.Join(".", uploadsDir, file.Filename)
-
-		src, err := file.Open()
-		if err != nil {
-			message := fmt.Sprintf("Error when opening %v", file.Filename)
-			return c.String(http.StatusBadRequest, message)
-		}
-		defer src.Close()
-
-		dst, err := os.Create(fullname)
-		if err != nil {
-			message := fmt.Sprintf("Error when opening %v", file.Filename)
-			return c.String(http.StatusBadRequest, message)
-		}
-		defer dst.Close()
-
-		if _, err = io.Copy(dst, src); err != nil {
-			message := fmt.Sprintf("Error when opening %v", file.Filename)
-			return c.String(http.StatusBadRequest, message)
-		}
-	}
-
-	return c.String(http.StatusOK, "Files are uploaded")
-
-}
-
-func handlePushFiles(c echo.Context) error {
-	err := gitcommand.GitAddFile(uploadsDir)
-	if err != nil {
-		errMsg := fmt.Sprintf("Error when running git add %s\n\n***************************************************\n%s", uploadsDir, err.Error())
-		return c.String(http.StatusExpectationFailed, errMsg)
-	}
-
-	err = gitcommand.GitCommitShell(uploadsDir)
-	if err != nil {
-		errMsg := fmt.Sprintf("Error when running git commit\n\n***************************************************\n%s", err.Error())
-		return c.String(http.StatusExpectationFailed, errMsg)
-	}
-
-	if token == "" {
-		err = gitcommand.GitPushShell(remote, branch)
-	} else {
-		err = gitcommand.GitPushToken(remote, branch, token)
-	}
-	if err != nil {
-		errMsg := fmt.Sprintf("Error when running git push\n\n***************************************************\n%s", err.Error())
-		return c.String(http.StatusExpectationFailed, errMsg)
-	}
-
-	return c.Redirect(http.StatusMovedPermanently, "/")
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
 }
