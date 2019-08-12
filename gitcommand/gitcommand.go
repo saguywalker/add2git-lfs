@@ -27,6 +27,7 @@ type Config struct {
 	Token      string
 	UploadsDir string
 	User       string
+	Os         string
 }
 
 // NewConfig returns a new Config
@@ -98,18 +99,26 @@ func InitLfs(branch, email, remote, token, uploadsDir, user string) (*Config, er
 		return nil, err
 	}
 
-	out := make([]byte, 0)
+	var cmd string
+	var args []string
 	if runtime.GOOS == "windows" {
-		command := fmt.Sprintf("git lfs install && git lfs track %s/*", config.UploadsDir)
-		out, err = exec.Command("cmd", "/C", command).Output()
+		config.Os = "windows"
+
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git lfs install && git lfs track %s/*", config.UploadsDir)}
 	} else {
-		out, err = exec.Command("git-lfs", "install").Output()
+		config.Os = "linux"
+
+		cmd = "git-lfs"
+		out, err := exec.Command(cmd, "install").Output()
 		if err != nil {
 			return nil, fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
-		out, err = exec.Command("git-lfs", "track", fmt.Sprintf("%s/*", config.UploadsDir)).Output()
+		args = []string{"track", fmt.Sprintf("%s/*", config.UploadsDir)}
 	}
+
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return nil, fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -124,14 +133,19 @@ func InitLfs(branch, email, remote, token, uploadsDir, user string) (*Config, er
 
 // GitAddFile adds files in a specified directory to a worktree
 func (config *Config) GitAddFile(filename string) error {
-	var err error
-	out := make([]byte, 0)
-	if runtime.GOOS == "windows" {
-		addCmd := fmt.Sprintf("git add %v", filename)
-		out, err = exec.Command("cmd", "/C", addCmd).Output()
+	var cmd string
+	var args []string
+
+	if config.Os == "windows" {
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git add %v", filename)}
 	} else {
-		out, err = exec.Command("git", "add", filename).Output()
+		cmd = "git"
+		args = []string{"add", filename}
 	}
+
+	out, err := exec.Command(cmd, args...).Output()
+
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -175,7 +189,7 @@ func (config *Config) GitPushToken() error {
 	out := make([]byte, 0)
 	gitURLCommand := fmt.Sprintf("remote.%s.url", config.Remote)
 
-	if runtime.GOOS == "windows" {
+	if config.Os == "windows" {
 		command := fmt.Sprintf("git config %s", gitURLCommand)
 		out, err = exec.Command("cmd", "/C", command).Output()
 	} else {
@@ -199,7 +213,7 @@ func (config *Config) GitPushToken() error {
 	}
 
 	var command *exec.Cmd
-	if runtime.GOOS == "windows" {
+	if config.Os == "windows" {
 		runCommand := fmt.Sprintf("git push %s %s", pushCommand, config.Branch)
 		command = exec.Command("cmd", "/C", runCommand)
 		out, err = command.Output()
@@ -287,22 +301,18 @@ func splitGitURL(url []byte) (string, bool, error) {
 
 // ConfigUser configs the user.name and user.email if flags are not provided
 func (config *Config) ConfigUser(configType string) error {
-	out := make([]byte, 0)
-	var err error
-	if runtime.GOOS == "windows" {
-		out, err = exec.Command("cmd", "/C", fmt.Sprintf("git config user.%s", configType)).Output()
-		if err != nil {
-			return fmt.Errorf("%s\n%s", out, err)
-		}
-	} else {
-		out, err = exec.Command("git", "config", fmt.Sprintf("user.%s", configType)).Output()
-		if err != nil {
-			return fmt.Errorf("%s\n%s", out, err)
-		}
+	var cmd string
+	var args []string
 
+	if config.Os == "windows" {
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git config user.%s", configType)}
+	} else {
+		cmd = "git"
+		args = []string{"config", fmt.Sprintf("user.%s", configType)}
 	}
 
-	fmt.Println(len(out), err)
+	out, err := exec.Command(cmd, args...).Output()
 
 	if err != nil {
 		return fmt.Errorf("%s\n%s", out, err)
