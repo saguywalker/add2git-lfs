@@ -8,9 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/saguywalker/add2git-lfs/gitcommand"
-
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/saguywalker/add2git-lfs/gitcommand"
 
 	"github.com/labstack/echo"
 )
@@ -26,24 +25,8 @@ func main() {
 
 	flag.Parse()
 
-	config := gitcommand.NewConfig(*branch, *email, *remote, *token, *uploadsDir, *user)
-
-	if config.User != "" {
-		err := config.ConfigUser("Name")
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if *email != "" {
-		err := config.ConfigUser("Email")
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	os.MkdirAll(filepath.Join(".", config.UploadsDir), os.ModePerm)
-	err := config.InitLfs()
+	os.MkdirAll(filepath.Join(".", *uploadsDir), os.ModePerm)
+	config, err := gitcommand.InitLfs(*branch, *email, *remote, *token, *uploadsDir, *user)
 	if err != nil {
 		panic(err)
 	}
