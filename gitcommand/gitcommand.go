@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -18,6 +17,7 @@ import (
 type Config struct {
 	Branch     string
 	Email      string
+    OS         string
 	Remote     string
 	Token      string
 	UploadsDir string
@@ -25,11 +25,13 @@ type Config struct {
 }
 
 // NewConfig returns a new Config
-func NewConfig(branch, email, remote, token, uploadsDir, user string) *Config {
+func NewConfig(branch, email, os, remote, token, uploadsDir, user string) *Config {
 	return &Config{
 		Branch:     branch,
 		Email:      email,
+        OS:         os,
 		Remote:     remote,
+        Token:      token,
 		UploadsDir: uploadsDir,
 		User:       user,
 	}
@@ -38,20 +40,23 @@ func NewConfig(branch, email, remote, token, uploadsDir, user string) *Config {
 // InitLfs runs necessary commands before open a web application
 // Including checkout to a specified branch, initialized git lfs, track a specified directory and add it to a worktree
 func (config *Config) InitLfs() error {
-	var err error
-	out := make([]byte, 0)
-	if runtime.GOOS == "windows" {
-		initLfsCmd := fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", config.Branch, config.Branch, config.UploadsDir)
-		out, err = exec.Command("cmd", "/C", initLfsCmd).Output()
-	} else {
-		exec.Command("git", "checkout -f").Output()
+    var cmd string
+    var args []string
 
-		err = exec.Command("git", "checkout", config.Branch).Run()
+	if config.OS == "windows" {
+        cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", config.Branch, config.Branch, config.UploadsDir)}
+	} else {
+        cmd = "git"
+
+		exec.Command(cmd, "checkout -f").Output()
+
+        err := exec.Command(cmd, "checkout", config.Branch).Run()
 		if err != nil {
-			exec.Command("git", "checkout", "-b", config.Branch).Run()
+			exec.Command(cmd, "checkout", "-b", config.Branch).Run()
 		}
 
-		out, err = exec.Command("git-lfs", "install").Output()
+        out, err := exec.Command("git-lfs", "install").Output()
 		if err != nil {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
@@ -61,14 +66,15 @@ func (config *Config) InitLfs() error {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
-		out, err = exec.Command("git", "add", ".gitattributes").Output()
+		out, err = exec.Command(cmd, "add", ".gitattributes").Output()
 		if err != nil {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
-		out, err = exec.Command("git", "config", "http.sslVerify", "false").Output()
+        args = []string{"config", "http.sslVerify", "false"}
 	}
 
+    out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -78,14 +84,18 @@ func (config *Config) InitLfs() error {
 
 // GitAddFile adds files in a specified directory to a worktree
 func (config *Config) GitAddFile() error {
-	var err error
-	out := make([]byte, 0)
-	if runtime.GOOS == "windows" {
-		addCmd := fmt.Sprintf("git add %v", config.UploadsDir)
-		out, err = exec.Command("cmd", "/C", addCmd).Output()
+	var cmd string
+    var args []string
+
+    if config.OS == "windows" {
+        cmd = "cmd"
+        args = []string{"/C", fmt.Sprintf("git add %s", config.UploadsDir)}
 	} else {
-		out, err = exec.Command("git", "add", config.UploadsDir).Output()
+        cmd = "git"
+        args = []string{"add", config.UploadsDir}
 	}
+
+    out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -95,17 +105,19 @@ func (config *Config) GitAddFile() error {
 
 // GitCommitFiles commits files according to a specified directory
 func (config *Config) GitCommitFiles() error {
-	var err error
-	out := make([]byte, 0)
-	if runtime.GOOS == "windows" {
-		commitCmd := fmt.Sprintf("git commit -m upload-files-to-%s", config.UploadsDir)
-		out, err = exec.Command("cmd", "/C", commitCmd).Output()
+	var cmd string
+    var args []string
+
+    if config.OS == "windows" {
+        cmd = "cmd"
+        args = []string{"/C", fmt.Sprintf("git commit -m upload-files-to%s", config.UploadsDir)}
 	} else {
-		commitCmd := fmt.Sprintf("upload files to %s", config.UploadsDir)
-		out, err = exec.Command("git", "commit", "-m", commitCmd).Output()
+        cmd = "git"
+        args = []string{"commit", "-m", fmt.Sprintf("upload files to %s", config.UploadsDir)}
 	}
 
-	if err != nil {
+    out, err := exec.Command(cmd, args...).Output()
+    if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
@@ -114,14 +126,18 @@ func (config *Config) GitCommitFiles() error {
 
 // GitPushFiles pushs files to the specified remote and branch
 func (config *Config) GitPushFiles() error {
-	var err error
-	out := make([]byte, 0)
-	if runtime.GOOS == "windows" {
-		gitPushCmd := fmt.Sprintf("git push %s %s", config.Remote, config.Branch)
-		out, err = exec.Command("cmd", "/C", gitPushCmd).Output()
+	var cmd string
+    var args []string
+
+    if config.OS == "windows" {
+        cmd = "cmd"
+        args = []string{"/C", fmt.Sprintf("git push %s %s", config.Remote, config.Branch)}
 	} else {
-		out, err = exec.Command("git", "push", config.Remote, config.Branch).Output()
+        cmd = "git"
+        args = []string{"push", config.Remote, config.Branch}
 	}
+
+    out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -131,17 +147,20 @@ func (config *Config) GitPushFiles() error {
 
 // GitPushToken pushs files to the specified remote and branch via a token.
 func (config *Config) GitPushToken() error {
-	var err error
-	out := make([]byte, 0)
-	gitURLCommand := fmt.Sprintf("remote.%s.url", config.Remote)
+	var cmd string
+    var args []string
 
-	if runtime.GOOS == "windows" {
-		command := fmt.Sprintf("git config %s", gitURLCommand)
-		out, err = exec.Command("cmd", "/C", command).Output()
+    gitURLCommand := fmt.Sprintf("remote.%s.url", config.Remote)
+
+	if config.OS == "windows" {
+        cmd = "cmd"
+        args = []string{"/C", fmt.Sprintf("git config %s", gitURLCommand)}
 	} else {
-		out, err = exec.Command("git", "config", gitURLCommand).Output()
-
+        cmd = "git"
+        args = []string{"config", gitURLCommand}
 	}
+
+    out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
 	}
@@ -158,18 +177,15 @@ func (config *Config) GitPushToken() error {
 		pushCommand = fmt.Sprintf("http://oauth2:%s@%s", config.Token, gitURL)
 	}
 
-	var command *exec.Cmd
-	if runtime.GOOS == "windows" {
-		runCommand := fmt.Sprintf("git push %s %s", pushCommand, config.Branch)
-		command = exec.Command("cmd", "/C", runCommand)
-		out, err = command.Output()
-	} else {
-		command = exec.Command("git", "push", pushCommand, config.Branch)
-		out, err = command.Output()
-	}
+    if config.OS == "windows"{
+        args = []string{"/C", fmt.Sprintf("git push %s %s", pushCommand, config.Branch)}
+    }else{
+        args = []string{"push", pushCommand, config.Branch}
+    }
 
-	if err != nil {
-		return fmt.Errorf("%+v\n%s\n%s", command, string(out), err.Error())
+    out, err = exec.Command(cmd, args...).Output()
+    if err != nil{
+		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
 	return nil
@@ -239,7 +255,7 @@ func splitGitURL(url []byte) (string, bool, error) {
 	output = append(output, repo...)
 
 	if string(output[len(output)-4:]) != ".git" {
-		repo = append(repo, []byte(".git")...)
+		output = append(output, []byte(".git")...)
 	}
 
 	return string(output), isHTTPS, nil
@@ -260,15 +276,18 @@ func (config *Config) ConfigUser(configType string) error {
 		return errors.New("config type for commit should be either name or email")
 	}
 
-	out := make([]byte, 0)
-	var err error
+    var cmd string
+    var args []string
 
-	if runtime.GOOS == "windows" {
-		out, err = exec.Command("cmd", "/C", fmt.Sprintf("git config user.%s \"%s\"", configType, configVar)).Output()
+	if config.OS == "windows" {
+        cmd = "cmd"
+        args = []string{"/C", fmt.Sprintf("git config user.%s %s", configType, configVar)}
 	} else {
-		out, err = exec.Command("git", "config", fmt.Sprintf("user.%s", configType), fmt.Sprintf("\"%s\"", configVar)).Output()
+        cmd = "git"
+        args = []string{"config", fmt.Sprintf("user.%s", configType), fmt.Sprintf("\"%s\"", configVar)}
 	}
 
+    out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", out, err)
 	}

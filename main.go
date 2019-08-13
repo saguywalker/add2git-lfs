@@ -26,7 +26,12 @@ func main() {
 
 	flag.Parse()
 
-	config := gitcommand.NewConfig(*branch, *email, *remote, *token, *uploadsDir, *user)
+	var config *gitcommand.Config
+	if runtime.GOOS == "windows" {
+		config = gitcommand.NewConfig(*branch, *email, "windows", *remote, *token, *uploadsDir, *user)
+	} else {
+		config = gitcommand.NewConfig(*branch, *email, "linux", *remote, *token, *uploadsDir, *user)
+	}
 
 	if config.User != "" {
 		err := config.ConfigUser("Name")
