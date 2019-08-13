@@ -6,29 +6,29 @@ workspace:
     path: src/github.com/saguywalker/add2git-lfs
 
 steps:
-    #- name: get
-    #  image: golang
-    #commands:
-    #  - go get ./...
+- name: get
+  image: golang
+  commands:
+    - go get ./...
 
 - name: format
   image: golang
   commands:
-      - go fmt $(go list ./... | grep -v /vendor/)
-      - go vet $(go list ./... | grep -v /vendor/)
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
 
 - name: test-func
   image: golang
   commands:
-      - go test ./...
+    - go test ./...
 
 - name: compile
   image: golang
   commands:
-      - go get ./...
-      - rice embed-go
-      - CGO_ENABLED=0 go build
-      - mv add2git-lfs bin/add2git-lfs
-      - GOOS="windows" go build
-      - mv add2git-lfs.exe bin/add2git-lfs
+    - go get github.com/GeertJohan/go.rice/rice
+    - rice embed-go
+    - CGO_ENABLED=0 go build
+    - mv add2git-lfs bin/add2git-lfs
+    - GOOS="windows" go build
+    - mv add2git-lfs.exe bin/add2git-lfs
 
