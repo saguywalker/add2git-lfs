@@ -28,7 +28,4 @@ steps:
     - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - CGO_ENABLED=0 go build
-    - mv add2git-lfs bin/add2git-lfs
-    - GOOS="windows" go build
-    - mv add2git-lfs.exe bin/add2git-lfs
 
