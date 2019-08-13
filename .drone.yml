@@ -25,7 +25,7 @@ steps:
 - name: compile
   image: golang
   commands:
-      - rice
+      - rice embed-go
       - CGO_ENABLED=0 go build
       - mv add2git-lfs bin/add2git-lfs
       - GOOS="windows" go build
