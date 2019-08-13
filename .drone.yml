@@ -1,11 +1,16 @@
 kind: pipeline
-name: test
+name: get-dependencies
 
 workspace:
     base: /go
     path: src/github.com/saguywalker/add2git-lfs
 
 steps:
+- name: get
+  image: golang
+  commands:
+      - go get ./...
+
 - name: format
   image: golang
   commands:
@@ -17,23 +22,12 @@ steps:
   commands:
       - go test ./...
 
-
----
-kind: pipeline
-name: build
-
-workspace:
-    base: /go
-    path: src/github.com/saguywalker/add2git-lfs
-
-steps:
 - name: compile
   image: golang
   commands:
+      - rice
       - CGO_ENABLED=0 go build
       - mv add2git-lfs bin/add2git-lfs
       - GOOS="windows" go build
       - mv add2git-lfs.exe bin/add2git-lfs
 
-depends_on:
-  - test  
