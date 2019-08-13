@@ -17,7 +17,7 @@ import (
 type Config struct {
 	Branch     string
 	Email      string
-    OS         string
+	OS         string
 	Remote     string
 	Token      string
 	UploadsDir string
@@ -29,9 +29,9 @@ func NewConfig(branch, email, os, remote, token, uploadsDir, user string) *Confi
 	return &Config{
 		Branch:     branch,
 		Email:      email,
-        OS:         os,
+		OS:         os,
 		Remote:     remote,
-        Token:      token,
+		Token:      token,
 		UploadsDir: uploadsDir,
 		User:       user,
 	}
@@ -40,23 +40,23 @@ func NewConfig(branch, email, os, remote, token, uploadsDir, user string) *Confi
 // InitLfs runs necessary commands before open a web application
 // Including checkout to a specified branch, initialized git lfs, track a specified directory and add it to a worktree
 func (config *Config) InitLfs() error {
-    var cmd string
-    var args []string
+	var cmd string
+	var args []string
 
 	if config.OS == "windows" {
-        cmd = "cmd"
+		cmd = "cmd"
 		args = []string{"/C", fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", config.Branch, config.Branch, config.UploadsDir)}
 	} else {
-        cmd = "git"
+		cmd = "git"
 
 		exec.Command(cmd, "checkout -f").Output()
 
-        err := exec.Command(cmd, "checkout", config.Branch).Run()
+		err := exec.Command(cmd, "checkout", config.Branch).Run()
 		if err != nil {
 			exec.Command(cmd, "checkout", "-b", config.Branch).Run()
 		}
 
-        out, err := exec.Command("git-lfs", "install").Output()
+		out, err := exec.Command("git-lfs", "install").Output()
 		if err != nil {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
@@ -71,10 +71,10 @@ func (config *Config) InitLfs() error {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
-        args = []string{"config", "http.sslVerify", "false"}
+		args = []string{"config", "http.sslVerify", "false"}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -85,17 +85,17 @@ func (config *Config) InitLfs() error {
 // GitAddFile adds files in a specified directory to a worktree
 func (config *Config) GitAddFile() error {
 	var cmd string
-    var args []string
+	var args []string
 
-    if config.OS == "windows" {
-        cmd = "cmd"
-        args = []string{"/C", fmt.Sprintf("git add %s", config.UploadsDir)}
+	if config.OS == "windows" {
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git add %s", config.UploadsDir)}
 	} else {
-        cmd = "git"
-        args = []string{"add", config.UploadsDir}
+		cmd = "git"
+		args = []string{"add", config.UploadsDir}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -106,18 +106,18 @@ func (config *Config) GitAddFile() error {
 // GitCommitFiles commits files according to a specified directory
 func (config *Config) GitCommitFiles() error {
 	var cmd string
-    var args []string
+	var args []string
 
-    if config.OS == "windows" {
-        cmd = "cmd"
-        args = []string{"/C", fmt.Sprintf("git commit -m upload-files-to%s", config.UploadsDir)}
+	if config.OS == "windows" {
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git commit -m upload-files-to%s", config.UploadsDir)}
 	} else {
-        cmd = "git"
-        args = []string{"commit", "-m", fmt.Sprintf("upload files to %s", config.UploadsDir)}
+		cmd = "git"
+		args = []string{"commit", "-m", fmt.Sprintf("upload files to %s", config.UploadsDir)}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
-    if err != nil {
+	out, err := exec.Command(cmd, args...).Output()
+	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
@@ -127,17 +127,17 @@ func (config *Config) GitCommitFiles() error {
 // GitPushFiles pushs files to the specified remote and branch
 func (config *Config) GitPushFiles() error {
 	var cmd string
-    var args []string
+	var args []string
 
-    if config.OS == "windows" {
-        cmd = "cmd"
-        args = []string{"/C", fmt.Sprintf("git push %s %s", config.Remote, config.Branch)}
+	if config.OS == "windows" {
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git push %s %s", config.Remote, config.Branch)}
 	} else {
-        cmd = "git"
-        args = []string{"push", config.Remote, config.Branch}
+		cmd = "git"
+		args = []string{"push", config.Remote, config.Branch}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
@@ -148,19 +148,19 @@ func (config *Config) GitPushFiles() error {
 // GitPushToken pushs files to the specified remote and branch via a token.
 func (config *Config) GitPushToken() error {
 	var cmd string
-    var args []string
+	var args []string
 
-    gitURLCommand := fmt.Sprintf("remote.%s.url", config.Remote)
+	gitURLCommand := fmt.Sprintf("remote.%s.url", config.Remote)
 
 	if config.OS == "windows" {
-        cmd = "cmd"
-        args = []string{"/C", fmt.Sprintf("git config %s", gitURLCommand)}
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git config %s", gitURLCommand)}
 	} else {
-        cmd = "git"
-        args = []string{"config", gitURLCommand}
+		cmd = "git"
+		args = []string{"config", gitURLCommand}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("Not found git url from git config %s", gitURLCommand)
 	}
@@ -177,14 +177,14 @@ func (config *Config) GitPushToken() error {
 		pushCommand = fmt.Sprintf("http://oauth2:%s@%s", config.Token, gitURL)
 	}
 
-    if config.OS == "windows"{
-        args = []string{"/C", fmt.Sprintf("git push %s %s", pushCommand, config.Branch)}
-    }else{
-        args = []string{"push", pushCommand, config.Branch}
-    }
+	if config.OS == "windows" {
+		args = []string{"/C", fmt.Sprintf("git push %s %s", pushCommand, config.Branch)}
+	} else {
+		args = []string{"push", pushCommand, config.Branch}
+	}
 
-    out, err = exec.Command(cmd, args...).Output()
-    if err != nil{
+	out, err = exec.Command(cmd, args...).Output()
+	if err != nil {
 		return fmt.Errorf("%s\n%s", string(out), err.Error())
 	}
 
@@ -276,18 +276,18 @@ func (config *Config) ConfigUser(configType string) error {
 		return errors.New("config type for commit should be either name or email")
 	}
 
-    var cmd string
-    var args []string
+	var cmd string
+	var args []string
 
 	if config.OS == "windows" {
-        cmd = "cmd"
-        args = []string{"/C", fmt.Sprintf("git config user.%s %s", configType, configVar)}
+		cmd = "cmd"
+		args = []string{"/C", fmt.Sprintf("git config user.%s %s", configType, configVar)}
 	} else {
-        cmd = "git"
-        args = []string{"config", fmt.Sprintf("user.%s", configType), fmt.Sprintf("\"%s\"", configVar)}
+		cmd = "git"
+		args = []string{"config", fmt.Sprintf("user.%s", configType), fmt.Sprintf("\"%s\"", configVar)}
 	}
 
-    out, err := exec.Command(cmd, args...).Output()
+	out, err := exec.Command(cmd, args...).Output()
 	if err != nil {
 		return fmt.Errorf("%s\n%s", out, err)
 	}

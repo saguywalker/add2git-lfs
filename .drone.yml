@@ -1,0 +1,39 @@
+kind: pipeline
+name: test
+
+workspace:
+    base: /go
+    path: src/github.com/saguywalker/add2git-lfs
+
+steps:
+- name: format
+  image: golang
+  commands:
+      - go fmt ./...
+      - go vet ./...
+
+- name: test-func
+  image: golang
+  commands:
+      - go test ./...
+
+
+---
+kind: pipeline
+name: build
+
+workspace:
+    base: /go
+    path: src/github.com/saguywalker/add2git-lfs
+
+steps:
+- name: compile
+  image: golang
+  commands:
+      - CGO_ENABLED=0 go build
+      - mv add2git-lfs bin/add2git-lfs
+      - GOOS="windows" go build
+      - mv add2git-lfs.exe bin/add2git-lfs
+
+depends_on:
+  - test  
