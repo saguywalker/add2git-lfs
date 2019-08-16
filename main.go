@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,10 +19,11 @@ import (
 func main() {
 	branch := flag.String("branch", "master", "branch")
 	email := flag.String("email", "", "user.email for commit")
+	//https := flag.Bool("https", true, "use https or not")
+	port := flag.Int("port", 12358, "port for webapp")
 	remote := flag.String("remote", "origin", "remote")
 	token := flag.String("token", "", "personal access token")
 	uploadsDir := flag.String("folder", "sample-files", "folder to upload files")
-	url := flag.String("url", "http://localhost:12358/", "URL for a web application")
 	user := flag.String("user", "", "user.name for commit")
 
 	flag.Parse()
@@ -54,13 +56,25 @@ func main() {
 	}
 
 	e := echo.New()
+	//if *https == true {
+	//		e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(fmt.Sprintf("127.0.0.1:%d", *port))
+	//		e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
+	//	}
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 	e.POST("/upload", config.HandleUpload)
 	e.POST("/pushfiles", config.HandlePushFiles)
-	go Open(*url)
-	e.Logger.Fatal(e.Start(":12358"))
+
+	go Open(fmt.Sprintf("http://127.0.0.1:%d", *port))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
+	//if *https == true {
+	//		go Open(fmt.Sprintf("https://127.0.0.1:%d", *port))
+	//		e.Logger.Fatal(e.StartAutoTLS(fmt.Sprintf(":%d", *port)))
+	//	} else {
+	//		go Open(fmt.Sprintf("http://127.0.0.1:%d", *port))
+	//		e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
+	//	}
 }
 
 //Open a browser according to URL

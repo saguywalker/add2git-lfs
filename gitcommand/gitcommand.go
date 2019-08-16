@@ -45,7 +45,7 @@ func (config *Config) InitLfs() error {
 
 	if config.OS == "windows" {
 		cmd = "cmd"
-		args = []string{"/C", fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes && git config http.sslVerify false", config.Branch, config.Branch, config.UploadsDir)}
+		args = []string{"/C", fmt.Sprintf("git checkout -f && (git checkout %s || git checkout -b %s) && git lfs install && git lfs track \"%s/*\" && git add .gitattributes", config.Branch, config.Branch, config.UploadsDir)}
 	} else {
 		cmd = "git"
 
@@ -66,12 +66,7 @@ func (config *Config) InitLfs() error {
 			return fmt.Errorf("%s\n%s", string(out), err.Error())
 		}
 
-		out, err = exec.Command(cmd, "add", ".gitattributes").Output()
-		if err != nil {
-			return fmt.Errorf("%s\n%s", string(out), err.Error())
-		}
-
-		args = []string{"config", "http.sslVerify", "false"}
+		args = []string{"add", ".gitattributes"}
 	}
 
 	out, err := exec.Command(cmd, args...).Output()
