@@ -1,7 +1,7 @@
 [![Build Status](https://cloud.drone.io/api/badges/saguywalker/add2git-lfs/status.svg)](https://cloud.drone.io/saguywalker/add2git-lfs)
 # add2git-lfs
 
-A static web application that let you upload files and push them on a specific folder, remote and branch.
+A static web application that let you upload files and push them on a specific folder, remote and branch, with support of Git-LFS.
 
 ## Installation
 
