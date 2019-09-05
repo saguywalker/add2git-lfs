@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-//Config is a bunch of configuration for a web application
+// Config is a bunch of configuration for a web application
 type Config struct {
 	Branch     string
 	Email      string

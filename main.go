@@ -9,17 +9,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/saguywalker/add2git-lfs/gitcommand"
-
 	rice "github.com/GeertJohan/go.rice"
-
 	"github.com/labstack/echo"
+	"github.com/saguywalker/add2git-lfs/gitcommand"
 )
 
 func main() {
 	branch := flag.String("branch", "master", "branch")
 	email := flag.String("email", "", "user.email for commit")
-	//https := flag.Bool("https", true, "use https or not")
 	port := flag.Int("port", 12358, "port for webapp")
 	remote := flag.String("remote", "origin", "remote")
 	token := flag.String("token", "", "personal access token")
@@ -28,23 +25,16 @@ func main() {
 
 	flag.Parse()
 
-	var config *gitcommand.Config
-	if runtime.GOOS == "windows" {
-		config = gitcommand.NewConfig(*branch, *email, "windows", *remote, *token, *uploadsDir, *user)
-	} else {
-		config = gitcommand.NewConfig(*branch, *email, "linux", *remote, *token, *uploadsDir, *user)
-	}
+	config := gitcommand.NewConfig(*branch, *email, runtime.GOOS, *remote, *token, *uploadsDir, *user)
 
 	if config.User != "" {
-		err := config.ConfigUser("Name")
-		if err != nil {
+		if err := config.ConfigUser("Name"); err != nil {
 			panic(err)
 		}
 	}
 
 	if *email != "" {
-		err := config.ConfigUser("Email")
-		if err != nil {
+		if err := config.ConfigUser("Email"); err != nil {
 			panic(err)
 		}
 	}
@@ -56,10 +46,7 @@ func main() {
 	}
 
 	e := echo.New()
-	//if *https == true {
-	//		e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(fmt.Sprintf("127.0.0.1:%d", *port))
-	//		e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
-	//	}
+
 	assetHandler := http.FileServer(rice.MustFindBox("public").HTTPBox())
 	e.GET("/", echo.WrapHandler(assetHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
@@ -68,13 +55,6 @@ func main() {
 
 	go Open(fmt.Sprintf("http://127.0.0.1:%d", *port))
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
-	//if *https == true {
-	//		go Open(fmt.Sprintf("https://127.0.0.1:%d", *port))
-	//		e.Logger.Fatal(e.StartAutoTLS(fmt.Sprintf(":%d", *port)))
-	//	} else {
-	//		go Open(fmt.Sprintf("http://127.0.0.1:%d", *port))
-	//		e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
-	//	}
 }
 
 //Open a browser according to URL
