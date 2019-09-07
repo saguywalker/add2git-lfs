@@ -11,7 +11,7 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo"
-	"github.com/saguywalker/add2git-lfs/gitcommand"
+	"github.com/saguywalker/add2git-lfs/internal/gitcommand"
 )
 
 func main() {
